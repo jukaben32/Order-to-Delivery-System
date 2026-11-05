@@ -5,7 +5,7 @@
     "active": false,
     "nodes": [
       {
-        "id": "4deb2e17-a52e-4b45-9581-b78ce60f712d",
+        "id": "574e8f4e-40d0-4879-a4f3-920cfd2b6de6",
         "name": "OpenWA webhook",
         "type": "n8n-nodes-base.webhook",
         "typeVersion": 2.1,
@@ -13,7 +13,7 @@
           0,
           200
         ],
-        "webhookId": "6e9bbdbc-ce94-4571-8d0e-b97b9442ca6e",
+        "webhookId": "f1f3c12f-a7ba-4e44-ab2e-8ae675223694",
         "parameters": {
           "httpMethod": "POST",
           "path": "wa-inbound-PLACEHOLDER",
@@ -22,7 +22,7 @@
         }
       },
       {
-        "id": "af076149-aa63-41d9-8cec-73e36143e867",
+        "id": "60b89fba-e96c-430a-b409-8a1f8f97b562",
         "name": "Filter message",
         "type": "n8n-nodes-base.code",
         "typeVersion": 2,
@@ -33,12 +33,12 @@
         "parameters": {
           "mode": "runOnceForAllItems",
           "language": "javaScript",
-          "jsCode": "// Why Code: validates the OpenWA webhook, applies the test allowlist and drops duplicates.\nconst ALLOW = [];   // numbers allowed to talk to the bot (digits with country code). Empty = nobody.\nconst OWN = '18499192565';\nconst body = $input.first().json.body || $input.first().json;\nconst d = body.data || {};\nconst key = String(body.idempotencyKey || d.id || '');\nconst chatId = String(d.chatId || d.from || '');\nconst text = String(d.body || '').trim();\nconst isGroup = chatId.endsWith('@g.us') || chatId.includes('broadcast') || chatId.includes('status');\nconst phone = chatId.endsWith('@c.us') ? chatId.replace(/@c\\.us$/, '').replace(/\\D/g, '') : '';\nconst sd = $getWorkflowStaticData('global');\nsd.seen = sd.seen || [];\nconst dup = key && sd.seen.includes(key);\nif (key) { sd.seen.push(key); if (sd.seen.length > 200) sd.seen = sd.seen.slice(-100); }\nlet skip = '';\nif (body.event && body.event !== 'message.received') skip = 'event ' + body.event;\nelse if (d.fromMe === true || phone === OWN) skip = 'own message';\nelse if (isGroup) skip = 'group';\nelse if (!text || (d.type && d.type !== 'chat' && d.type !== 'text')) skip = 'not text';\nelse if (dup) skip = 'duplicate';\nelse if (!phone) skip = 'unresolved sender ' + chatId;\nelse if (!ALLOW.includes(phone)) skip = 'not allowlisted';\nreturn [{ json: { ok: skip === '', skip, phone, chatId, text, key } }];\n"
+          "jsCode": "// Why Code: validates the OpenWA webhook, applies the test allowlist and drops duplicates.\nconst ALLOW = [];   // numbers allowed to talk to the bot (digits with country code). Empty = nobody.\nconst OWN = '18499192565';\nconst SELF_CHATS = ['55182427721886@lid'];   // the self chat (note to self) of the test account\nconst body = $input.first().json.body || $input.first().json;\nconst d = body.data || {};\nconst key = String(body.idempotencyKey || d.id || '');\nconst chatId = String(d.chatId || d.from || '');\nconst text = String(d.body || '').trim();\nconst isGroup = chatId.endsWith('@g.us') || chatId.includes('broadcast') || chatId.includes('status');\nconst isSelf = SELF_CHATS.includes(chatId);\nconst phone = isSelf ? OWN : (chatId.endsWith('@c.us') ? chatId.replace(/@c\\.us$/, '').replace(/\\D/g, '') : '');\nconst sd = $getWorkflowStaticData('global');\nsd.seen = sd.seen || [];\nconst dup = key && sd.seen.includes(key);\nif (key) { sd.seen.push(key); if (sd.seen.length > 200) sd.seen = sd.seen.slice(-100); }\nlet skip = '';\nif (body.event && body.event !== 'message.received' && !(body.event === 'message.sent' && isSelf)) skip = 'event ' + body.event;\nelse if (text.startsWith('🤖')) skip = 'bot message';   // replies of the bot carry this mark: no loops\nelse if (d.fromMe === true && phone !== OWN) skip = 'outgoing to others';   // only the self chat (test mode) may be fromMe\nelse if (isGroup) skip = 'group';\nelse if (!text || (d.type && d.type !== 'chat' && d.type !== 'text')) skip = 'not text';\nelse if (dup) skip = 'duplicate';\nelse if (!phone) skip = 'unresolved sender ' + chatId;\nelse if (!ALLOW.includes(phone)) skip = 'not allowlisted';\nreturn [{ json: { ok: skip === '', skip, phone, chatId, text, key } }];\n"
         },
         "notes": "Allowlist: only the numbers listed in ALLOW get answers. Empty list = the bot stays silent."
       },
       {
-        "id": "2a5b49d5-dc05-43f8-a590-742aaea9b674",
+        "id": "2191e6f9-8509-4712-8fb0-02232f4daa04",
         "name": "Should answer?",
         "type": "n8n-nodes-base.if",
         "typeVersion": 2.4,
@@ -68,7 +68,7 @@
         }
       },
       {
-        "id": "a5537920-36b9-4f9c-807e-d46316fc1b58",
+        "id": "48b2d8d0-6b58-4b23-8501-b772c590fc3f",
         "name": "WhatsApp front desk",
         "type": "@n8n/n8n-nodes-langchain.agent",
         "typeVersion": 3.1,
@@ -87,7 +87,7 @@
         "onError": "continueRegularOutput"
       },
       {
-        "id": "fa01c91f-eb1f-4c6c-8e19-92d7ee8e499c",
+        "id": "1601e6c5-b2c6-47ef-844f-ca790a916503",
         "name": "Claude (WhatsApp)",
         "type": "@n8n/n8n-nodes-langchain.lmChatAnthropic",
         "typeVersion": 1.6,
@@ -114,7 +114,7 @@
         }
       },
       {
-        "id": "067b6968-38e8-43bf-b147-ff3e379f58ab",
+        "id": "9a4ddaa0-e66c-4739-8fe3-141fe6f0be1f",
         "name": "Memory per phone",
         "type": "@n8n/n8n-nodes-langchain.memoryBufferWindow",
         "typeVersion": 1.4,
@@ -129,7 +129,7 @@
         }
       },
       {
-        "id": "d883c548-4b8d-49b0-a614-1d0e69c4586f",
+        "id": "22bb46b0-7e38-4dfd-8690-1cb74d2cf636",
         "name": "Order agent",
         "type": "@n8n/n8n-nodes-langchain.toolWorkflow",
         "typeVersion": 2.2,
@@ -169,7 +169,7 @@
         }
       },
       {
-        "id": "0bd01206-7c6c-441d-83df-d714170f5b63",
+        "id": "e423bc38-2936-4c0c-86d9-128c237a52be",
         "name": "Support agent",
         "type": "@n8n/n8n-nodes-langchain.toolWorkflow",
         "typeVersion": 2.2,
@@ -209,7 +209,7 @@
         }
       },
       {
-        "id": "bb89ebb0-e643-435d-9274-e1fe3d52e4e3",
+        "id": "147b6f1c-5dd7-4172-a5ee-f6098ba23093",
         "name": "Products",
         "type": "n8n-nodes-base.googleSheetsTool",
         "typeVersion": 4.7,
@@ -239,7 +239,7 @@
         }
       },
       {
-        "id": "7dc9a14b-12e1-4efa-b293-ec8406396f20",
+        "id": "7c8bebfe-432c-4e1f-be8c-c38c7523966c",
         "name": "Prepare reply",
         "type": "n8n-nodes-base.code",
         "typeVersion": 2,
@@ -250,11 +250,11 @@
         "parameters": {
           "mode": "runOnceForAllItems",
           "language": "javaScript",
-          "jsCode": "// Why Code: keeps the agent answer or a safe fallback if the agent failed.\nconst f = $('Filter message').first().json;\nconst out = $input.first().json;\nlet text = String(out.output || '').trim();\nconst failed = !text || !!out.error;\nif (failed) text = 'Disculpa, tuve un problema para responder. Intenta de nuevo en un momento.';\nreturn [{ json: { chatId: f.chatId, phone: f.phone, text, failed } }];\n"
+          "jsCode": "// Why Code: keeps the agent answer or a safe fallback if the agent failed.\nconst f = $('Filter message').first().json;\nconst out = $input.first().json;\nlet text = String(out.output || '').trim();\nconst failed = !text || !!out.error;\nif (failed) text = 'Disculpa, tuve un problema para responder. Intenta de nuevo en un momento.';\ntext = '🤖 ' + text;\nreturn [{ json: { chatId: f.chatId, phone: f.phone, text, failed } }];\n"
         }
       },
       {
-        "id": "ab659c88-9720-47cd-8e36-c11c8192c4e6",
+        "id": "abddfd6e-f32f-4ad6-acd5-7affa3354a73",
         "name": "Send reply",
         "type": "n8n-nodes-base.httpRequest",
         "typeVersion": 4.2,
@@ -283,7 +283,7 @@
         "onError": "continueRegularOutput"
       },
       {
-        "id": "fb65a266-8991-4124-bc5d-c2ccdbd348a8",
+        "id": "af8f9f1f-4f66-4f16-974e-85f7cea01be7",
         "name": "Log reply",
         "type": "n8n-nodes-base.googleSheets",
         "typeVersion": 4.7,
@@ -376,7 +376,7 @@
         }
       },
       {
-        "id": "24cc454e-64f9-43d6-a934-9fcfb0f625b2",
+        "id": "da2722ef-3cb5-4d19-b25a-018db70f047b",
         "name": "Log ignored",
         "type": "n8n-nodes-base.googleSheets",
         "typeVersion": 4.7,
@@ -469,7 +469,7 @@
         }
       },
       {
-        "id": "c988b39a-499b-478a-8246-b2972fac418a",
+        "id": "94596c7e-01ff-4ae4-84ea-29903f73fa16",
         "name": "Note",
         "type": "n8n-nodes-base.stickyNote",
         "typeVersion": 1,

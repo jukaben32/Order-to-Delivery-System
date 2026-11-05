@@ -77,20 +77,23 @@ sysmsg = by['Front desk agent']['parameters']['options']['systemMessage'] + (
 FILTER_JS = """// Why Code: validates the OpenWA webhook, applies the test allowlist and drops duplicates.
 const ALLOW = __ALLOW__;   // numbers allowed to talk to the bot (digits with country code). Empty = nobody.
 const OWN = '__OWN__';
+const SELF_CHATS = ['55182427721886@lid'];   // the self chat (note to self) of the test account
 const body = $input.first().json.body || $input.first().json;
 const d = body.data || {};
 const key = String(body.idempotencyKey || d.id || '');
 const chatId = String(d.chatId || d.from || '');
 const text = String(d.body || '').trim();
 const isGroup = chatId.endsWith('@g.us') || chatId.includes('broadcast') || chatId.includes('status');
-const phone = chatId.endsWith('@c.us') ? chatId.replace(/@c\\.us$/, '').replace(/\\D/g, '') : '';
+const isSelf = SELF_CHATS.includes(chatId);
+const phone = isSelf ? OWN : (chatId.endsWith('@c.us') ? chatId.replace(/@c\\.us$/, '').replace(/\\D/g, '') : '');
 const sd = $getWorkflowStaticData('global');
 sd.seen = sd.seen || [];
 const dup = key && sd.seen.includes(key);
 if (key) { sd.seen.push(key); if (sd.seen.length > 200) sd.seen = sd.seen.slice(-100); }
 let skip = '';
-if (body.event && body.event !== 'message.received') skip = 'event ' + body.event;
-else if (d.fromMe === true || phone === OWN) skip = 'own message';
+if (body.event && body.event !== 'message.received' && !(body.event === 'message.sent' && isSelf)) skip = 'event ' + body.event;
+else if (text.startsWith('🤖')) skip = 'bot message';   // replies of the bot carry this mark: no loops
+else if (d.fromMe === true && phone !== OWN) skip = 'outgoing to others';   // only the self chat (test mode) may be fromMe
 else if (isGroup) skip = 'group';
 else if (!text || (d.type && d.type !== 'chat' && d.type !== 'text')) skip = 'not text';
 else if (dup) skip = 'duplicate';
@@ -130,6 +133,7 @@ const out = $input.first().json;
 let text = String(out.output || '').trim();
 const failed = !text || !!out.error;
 if (failed) text = 'Disculpa, tuve un problema para responder. Intenta de nuevo en un momento.';
+text = '🤖 ' + text;
 return [{ json: { chatId: f.chatId, phone: f.phone, text, failed } }];
 """
 prep = {'id': nid(), 'name': 'Prepare reply', 'type': 'n8n-nodes-base.code', 'typeVersion': 2, 'position': [1000, 100],
@@ -164,7 +168,8 @@ gw = [{'id': 'WhatsAppGate01', 'name': 'Demo Traders - WhatsApp Gateway', 'activ
        'pinData': {}, 'tags': []}]
 
 # ---------------------------------------------------------------- notify customer
-nt = load('10-notify-customer.json')
+with open(os.path.join(ROOT, 'tools', 'notify-base.json'), encoding='utf-8') as _f:
+    nt = json.load(_f)
 nn = {n['name']: n for n in nt['nodes']}
 PLAN_JS = """// Why Code: email when a valid email exists; WhatsApp (OpenWA) when the phone is on the test allowlist.
 const ALLOW = __ALLOW__;   // numbers that may receive WhatsApp messages. Empty = nothing is sent; messages stay as whatsapp_pending.
@@ -182,7 +187,7 @@ nt['nodes'] = [n for n in nt['nodes'] if not n['name'].startswith('Sticky Note')
 nn['Log WhatsApp pending']['position'] = [672, 384]
 wa_if = if_true('Send WhatsApp?', '={{ $json.send_wa }}', [448, 192])
 pend_if = if_true('Needs pending note?', '={{ $json.wa_pending }}', [448, 384])
-wa_send = send_node('Send WhatsApp', '$json.wa_chat', '$json.message', [672, 192])
+wa_send = send_node('Send WhatsApp', '$json.wa_chat', "'🤖 ' + $json.message", [672, 192])
 wa_log = log_node('Log WhatsApp result', 'Notify',
                   "={{ $json.error ? 'whatsapp_failed' : 'whatsapp_sent' }}",
                   "={{ $('Plan channels').first().json.order_id }}",
