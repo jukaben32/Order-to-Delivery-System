@@ -9,7 +9,7 @@ Lo que falta para llevar el concepto a producción.
 - Pasar los datos de Google Sheets a una base de datos real (Postgres o Supabase) cuando el volumen supere unos pocos pedidos por minuto.
 
 ## 2. Canales
-- **WhatsApp**: Evolution API para pruebas, la API oficial de Meta para producción. El flujo de negocio no cambia: la entrada del Front Desk pasa a ser WhatsApp, y la salida de los avisos se activa en un solo lugar, el flujo `Notify Customer` (rama "sin correo").
+- **WhatsApp**: conectado en pruebas con OpenWA (flujo `WhatsApp Gateway` + rama de envío en `Notify Customer`, solo para números de una lista permitida); la API oficial de Meta para producción. El flujo de negocio no cambia: la entrada del Front Desk pasa a ser WhatsApp, y la salida de los avisos se activa en un solo lugar, el flujo `Notify Customer` (rama "sin correo").
 - Responder `whatsapp_pending`: al conectar WhatsApp, enviar los avisos que quedaron pendientes en `Activity_Log`.
 - La tienda web puede pasar a **Vercel** como página estática, apuntando al n8n público.
 

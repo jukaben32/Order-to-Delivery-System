@@ -1,0 +1,626 @@
+[
+  {
+    "id": "WhatsAppGate01",
+    "name": "Demo Traders - WhatsApp Gateway",
+    "active": false,
+    "nodes": [
+      {
+        "id": "4deb2e17-a52e-4b45-9581-b78ce60f712d",
+        "name": "OpenWA webhook",
+        "type": "n8n-nodes-base.webhook",
+        "typeVersion": 2.1,
+        "position": [
+          0,
+          200
+        ],
+        "webhookId": "6e9bbdbc-ce94-4571-8d0e-b97b9442ca6e",
+        "parameters": {
+          "httpMethod": "POST",
+          "path": "wa-inbound-PLACEHOLDER",
+          "responseMode": "onReceived",
+          "options": {}
+        }
+      },
+      {
+        "id": "af076149-aa63-41d9-8cec-73e36143e867",
+        "name": "Filter message",
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [
+          224,
+          200
+        ],
+        "parameters": {
+          "mode": "runOnceForAllItems",
+          "language": "javaScript",
+          "jsCode": "// Why Code: validates the OpenWA webhook, applies the test allowlist and drops duplicates.\nconst ALLOW = [];   // numbers allowed to talk to the bot (digits with country code). Empty = nobody.\nconst OWN = '18499192565';\nconst body = $input.first().json.body || $input.first().json;\nconst d = body.data || {};\nconst key = String(body.idempotencyKey || d.id || '');\nconst chatId = String(d.chatId || d.from || '');\nconst text = String(d.body || '').trim();\nconst isGroup = chatId.endsWith('@g.us') || chatId.includes('broadcast') || chatId.includes('status');\nconst phone = chatId.endsWith('@c.us') ? chatId.replace(/@c\\.us$/, '').replace(/\\D/g, '') : '';\nconst sd = $getWorkflowStaticData('global');\nsd.seen = sd.seen || [];\nconst dup = key && sd.seen.includes(key);\nif (key) { sd.seen.push(key); if (sd.seen.length > 200) sd.seen = sd.seen.slice(-100); }\nlet skip = '';\nif (body.event && body.event !== 'message.received') skip = 'event ' + body.event;\nelse if (d.fromMe === true || phone === OWN) skip = 'own message';\nelse if (isGroup) skip = 'group';\nelse if (!text || (d.type && d.type !== 'chat' && d.type !== 'text')) skip = 'not text';\nelse if (dup) skip = 'duplicate';\nelse if (!phone) skip = 'unresolved sender ' + chatId;\nelse if (!ALLOW.includes(phone)) skip = 'not allowlisted';\nreturn [{ json: { ok: skip === '', skip, phone, chatId, text, key } }];\n"
+        },
+        "notes": "Allowlist: only the numbers listed in ALLOW get answers. Empty list = the bot stays silent."
+      },
+      {
+        "id": "2a5b49d5-dc05-43f8-a590-742aaea9b674",
+        "name": "Should answer?",
+        "type": "n8n-nodes-base.if",
+        "typeVersion": 2.4,
+        "position": [
+          448,
+          200
+        ],
+        "parameters": {
+          "conditions": {
+            "options": {
+              "caseSensitive": true,
+              "leftValue": "",
+              "typeValidation": "strict"
+            },
+            "conditions": [
+              {
+                "leftValue": "={{ $json.ok }}",
+                "operator": {
+                  "type": "boolean",
+                  "operation": "true",
+                  "singleValue": true
+                }
+              }
+            ],
+            "combinator": "and"
+          }
+        }
+      },
+      {
+        "id": "a5537920-36b9-4f9c-807e-d46316fc1b58",
+        "name": "WhatsApp front desk",
+        "type": "@n8n/n8n-nodes-langchain.agent",
+        "typeVersion": 3.1,
+        "position": [
+          672,
+          100
+        ],
+        "parameters": {
+          "promptType": "define",
+          "text": "=[WhatsApp customer, phone: {{ $json.phone }}]\n{{ $json.text }}",
+          "options": {
+            "systemMessage": "You are the Front Desk of Demo Traders, a grocery shop (colmado) in the Dominican Republic. Currency is RD$. Answer in the customer language (Spanish by default), friendly and short.\n\nYou route every request:\n1. NEW ORDER -> tool \"Order agent\".\n2. STATUS of an existing order (for example \"where is ORD-1001\") -> tool \"Support agent\".\n3. PRODUCT questions (what you sell, a price, stock) -> tool \"Products\" (it reads the product sheet). Answer using ONLY what it returns.\n\nMONEY RULES (strict)\n- NEVER invent, estimate, round or calculate a price, subtotal or total yourself. Prices come only from the \"Products\" tool or from the reply of the \"Order agent\". If you do not have the number from a tool, say you will check and call the tool.\n- Do not add up prices. Totals are calculated by the Order agent.\n\nORDER FLOW\n- When the customer wants to order, call \"Order agent\" with a complete summary of everything collected so far (you have the conversation memory): items and quantities, name, phone, delivery address, city. The EMAIL IS OPTIONAL: never ask for it, include it only if the customer offers it. Call the tool as soon as there is at least one item, even if data is missing: it tells you what is missing.\n- Relay the \"reply\" from the tool to the customer exactly as written. Do not change any number.\n- When the tool replies with an order summary and total, wait for the customer. If the customer clearly confirms that exact summary (sí, confirmo, dale, yes...), call \"Order agent\" again with the SAME details plus a last line: CUSTOMER CONFIRMED: YES. Never write that line unless the customer just confirmed the summary shown in the previous message. If the customer changes anything, call the tool again WITHOUT that line.\n- After a confirmed order, relay the confirmation reply exactly.\n\nIf the customer asks for something else, politely say you can help with orders, order status and products.\n\nCHANNEL: WhatsApp. The first line of each message is '[WhatsApp customer, phone: <digits>]'. That is the customer's phone: use it, never ask for it again. Keep replies short (WhatsApp), no markdown tables, use plain text and line breaks. Never mention the bracket line to the customer.",
+            "maxIterations": 10
+          }
+        },
+        "onError": "continueRegularOutput"
+      },
+      {
+        "id": "fa01c91f-eb1f-4c6c-8e19-92d7ee8e499c",
+        "name": "Claude (WhatsApp)",
+        "type": "@n8n/n8n-nodes-langchain.lmChatAnthropic",
+        "typeVersion": 1.6,
+        "position": [
+          592,
+          330
+        ],
+        "parameters": {
+          "model": {
+            "__rl": true,
+            "mode": "list",
+            "value": "claude-sonnet-5-5",
+            "cachedResultName": "Claude Sonnet 5.5"
+          },
+          "options": {
+            "maxTokensToSample": 1500
+          }
+        },
+        "credentials": {
+          "anthropicApi": {
+            "id": "pu1mRjJVOc4NZZMx",
+            "name": "Anthropic account"
+          }
+        }
+      },
+      {
+        "id": "067b6968-38e8-43bf-b147-ff3e379f58ab",
+        "name": "Memory per phone",
+        "type": "@n8n/n8n-nodes-langchain.memoryBufferWindow",
+        "typeVersion": 1.4,
+        "position": [
+          720,
+          330
+        ],
+        "parameters": {
+          "sessionIdType": "customKey",
+          "sessionKey": "=wa-{{ $('Filter message').first().json.phone }}",
+          "contextWindowLength": 12
+        }
+      },
+      {
+        "id": "d883c548-4b8d-49b0-a614-1d0e69c4586f",
+        "name": "Order agent",
+        "type": "@n8n/n8n-nodes-langchain.toolWorkflow",
+        "typeVersion": 2.2,
+        "position": [
+          848,
+          330
+        ],
+        "parameters": {
+          "description": "Use for every NEW ORDER. Send in \"request\" a complete plain-text summary of everything collected so far: items and quantities as the customer said them, customer name, phone, delivery address and city (the email is optional: include it only if the customer gave it). It returns a JSON with a \"reply\" to relay to the customer (missing data, order summary with the total, or the final confirmation). Add the line CUSTOMER CONFIRMED: YES at the end of \"request\" only after the customer confirmed the summary.",
+          "source": "database",
+          "workflowId": {
+            "__rl": true,
+            "mode": "id",
+            "value": "2TPOB7F9YDmeE15I",
+            "cachedResultName": "Demo Traders - Order Agent"
+          },
+          "workflowInputs": {
+            "mappingMode": "defineBelow",
+            "value": {
+              "request": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('request', 'Complete plain-text summary of the order details collected so far, plus CUSTOMER CONFIRMED: YES only if the customer confirmed') }}"
+            },
+            "matchingColumns": [],
+            "schema": [
+              {
+                "id": "request",
+                "displayName": "request",
+                "required": false,
+                "defaultMatch": false,
+                "display": true,
+                "canBeUsedToMatch": false,
+                "type": "string"
+              }
+            ],
+            "attemptToConvertTypes": false,
+            "convertFieldsToString": false
+          }
+        }
+      },
+      {
+        "id": "0bd01206-7c6c-441d-83df-d714170f5b63",
+        "name": "Support agent",
+        "type": "@n8n/n8n-nodes-langchain.toolWorkflow",
+        "typeVersion": 2.2,
+        "position": [
+          976,
+          330
+        ],
+        "parameters": {
+          "description": "Use when the customer asks about the STATUS of an existing order, for example \"where is ORD-1001\". Send the customer question including the order number in \"question\". It returns a JSON with a \"reply\" to relay to the customer.",
+          "source": "database",
+          "workflowId": {
+            "__rl": true,
+            "mode": "id",
+            "value": "hJkDbQ5dy7pHcvds",
+            "cachedResultName": "Demo Traders - Support Agent"
+          },
+          "workflowInputs": {
+            "mappingMode": "defineBelow",
+            "value": {
+              "question": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('question', 'The customer question about an order, including the order number such as ORD-1001') }}"
+            },
+            "matchingColumns": [],
+            "schema": [
+              {
+                "id": "question",
+                "displayName": "question",
+                "required": false,
+                "defaultMatch": false,
+                "display": true,
+                "canBeUsedToMatch": false,
+                "type": "string"
+              }
+            ],
+            "attemptToConvertTypes": false,
+            "convertFieldsToString": false
+          }
+        }
+      },
+      {
+        "id": "bb89ebb0-e643-435d-9274-e1fe3d52e4e3",
+        "name": "Products",
+        "type": "n8n-nodes-base.googleSheetsTool",
+        "typeVersion": 4.7,
+        "position": [
+          1104,
+          330
+        ],
+        "parameters": {
+          "resource": "sheet",
+          "operation": "read",
+          "documentId": {
+            "__rl": true,
+            "mode": "id",
+            "value": "1uFc0RmztEiY9tcsNGLe0bExBuhJ5Zxjp6j-J7WfYYjc"
+          },
+          "sheetName": {
+            "__rl": true,
+            "mode": "name",
+            "value": "Products"
+          }
+        },
+        "credentials": {
+          "googleSheetsOAuth2Api": {
+            "id": "uVqG7fQd8cxSfaMU",
+            "name": "order to delivery system"
+          }
+        }
+      },
+      {
+        "id": "7dc9a14b-12e1-4efa-b293-ec8406396f20",
+        "name": "Prepare reply",
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [
+          1000,
+          100
+        ],
+        "parameters": {
+          "mode": "runOnceForAllItems",
+          "language": "javaScript",
+          "jsCode": "// Why Code: keeps the agent answer or a safe fallback if the agent failed.\nconst f = $('Filter message').first().json;\nconst out = $input.first().json;\nlet text = String(out.output || '').trim();\nconst failed = !text || !!out.error;\nif (failed) text = 'Disculpa, tuve un problema para responder. Intenta de nuevo en un momento.';\nreturn [{ json: { chatId: f.chatId, phone: f.phone, text, failed } }];\n"
+        }
+      },
+      {
+        "id": "ab659c88-9720-47cd-8e36-c11c8192c4e6",
+        "name": "Send reply",
+        "type": "n8n-nodes-base.httpRequest",
+        "typeVersion": 4.2,
+        "position": [
+          1224,
+          100
+        ],
+        "parameters": {
+          "method": "POST",
+          "url": "http://localhost:2785/api/sessions/9478bd38-41f3-4cb9-b9b2-b178948fbd56/messages/send-text",
+          "authentication": "genericCredentialType",
+          "genericAuthType": "httpHeaderAuth",
+          "sendBody": true,
+          "specifyBody": "json",
+          "jsonBody": "={{ JSON.stringify({ chatId: $json.chatId, text: $json.text }) }}",
+          "options": {
+            "timeout": 20000
+          }
+        },
+        "credentials": {
+          "httpHeaderAuth": {
+            "id": "OpenWAKey01",
+            "name": "OpenWA API key"
+          }
+        },
+        "onError": "continueRegularOutput"
+      },
+      {
+        "id": "fb65a266-8991-4124-bc5d-c2ccdbd348a8",
+        "name": "Log reply",
+        "type": "n8n-nodes-base.googleSheets",
+        "typeVersion": 4.7,
+        "position": [
+          1448,
+          100
+        ],
+        "parameters": {
+          "resource": "sheet",
+          "operation": "append",
+          "documentId": {
+            "__rl": true,
+            "mode": "id",
+            "value": "1uFc0RmztEiY9tcsNGLe0bExBuhJ5Zxjp6j-J7WfYYjc"
+          },
+          "sheetName": {
+            "__rl": true,
+            "mode": "name",
+            "value": "Activity_Log"
+          },
+          "columns": {
+            "mappingMode": "defineBelow",
+            "value": {
+              "Time": "={{ $now.toFormat(\"yyyy-MM-dd HH:mm:ss\") }}",
+              "Agent": "WhatsApp",
+              "Action": "={{ $('Prepare reply').first().json.failed ? 'reply_fallback' : 'reply_sent' }}",
+              "Ref_ID": "=wa-{{ $('Prepare reply').first().json.phone }}",
+              "Details": "={{ $json.error ? 'ERROR enviando: ' + String($json.error.message || $json.error).slice(0, 150) : 'Respuesta enviada (' + String($('Prepare reply').first().json.text).length + ' caracteres)' }}"
+            },
+            "schema": [
+              {
+                "id": "Time",
+                "displayName": "Time",
+                "required": false,
+                "defaultMatch": false,
+                "display": true,
+                "type": "string",
+                "canBeUsedToMatch": true
+              },
+              {
+                "id": "Agent",
+                "displayName": "Agent",
+                "required": false,
+                "defaultMatch": false,
+                "display": true,
+                "type": "string",
+                "canBeUsedToMatch": true
+              },
+              {
+                "id": "Action",
+                "displayName": "Action",
+                "required": false,
+                "defaultMatch": false,
+                "display": true,
+                "type": "string",
+                "canBeUsedToMatch": true
+              },
+              {
+                "id": "Ref_ID",
+                "displayName": "Ref_ID",
+                "required": false,
+                "defaultMatch": false,
+                "display": true,
+                "type": "string",
+                "canBeUsedToMatch": true
+              },
+              {
+                "id": "Details",
+                "displayName": "Details",
+                "required": false,
+                "defaultMatch": false,
+                "display": true,
+                "type": "string",
+                "canBeUsedToMatch": true
+              }
+            ]
+          },
+          "options": {
+            "cellFormat": "RAW"
+          }
+        },
+        "retryOnFail": true,
+        "maxTries": 5,
+        "waitBetweenTries": 5000,
+        "credentials": {
+          "googleSheetsOAuth2Api": {
+            "id": "uVqG7fQd8cxSfaMU",
+            "name": "order to delivery system"
+          }
+        }
+      },
+      {
+        "id": "24cc454e-64f9-43d6-a934-9fcfb0f625b2",
+        "name": "Log ignored",
+        "type": "n8n-nodes-base.googleSheets",
+        "typeVersion": 4.7,
+        "position": [
+          672,
+          520
+        ],
+        "parameters": {
+          "resource": "sheet",
+          "operation": "append",
+          "documentId": {
+            "__rl": true,
+            "mode": "id",
+            "value": "1uFc0RmztEiY9tcsNGLe0bExBuhJ5Zxjp6j-J7WfYYjc"
+          },
+          "sheetName": {
+            "__rl": true,
+            "mode": "name",
+            "value": "Activity_Log"
+          },
+          "columns": {
+            "mappingMode": "defineBelow",
+            "value": {
+              "Time": "={{ $now.toFormat(\"yyyy-MM-dd HH:mm:ss\") }}",
+              "Agent": "WhatsApp",
+              "Action": "message_ignored",
+              "Ref_ID": "=wa-{{ $json.phone }}",
+              "Details": "={{ $json.skip }}"
+            },
+            "schema": [
+              {
+                "id": "Time",
+                "displayName": "Time",
+                "required": false,
+                "defaultMatch": false,
+                "display": true,
+                "type": "string",
+                "canBeUsedToMatch": true
+              },
+              {
+                "id": "Agent",
+                "displayName": "Agent",
+                "required": false,
+                "defaultMatch": false,
+                "display": true,
+                "type": "string",
+                "canBeUsedToMatch": true
+              },
+              {
+                "id": "Action",
+                "displayName": "Action",
+                "required": false,
+                "defaultMatch": false,
+                "display": true,
+                "type": "string",
+                "canBeUsedToMatch": true
+              },
+              {
+                "id": "Ref_ID",
+                "displayName": "Ref_ID",
+                "required": false,
+                "defaultMatch": false,
+                "display": true,
+                "type": "string",
+                "canBeUsedToMatch": true
+              },
+              {
+                "id": "Details",
+                "displayName": "Details",
+                "required": false,
+                "defaultMatch": false,
+                "display": true,
+                "type": "string",
+                "canBeUsedToMatch": true
+              }
+            ]
+          },
+          "options": {
+            "cellFormat": "RAW"
+          }
+        },
+        "retryOnFail": true,
+        "maxTries": 5,
+        "waitBetweenTries": 5000,
+        "credentials": {
+          "googleSheetsOAuth2Api": {
+            "id": "uVqG7fQd8cxSfaMU",
+            "name": "order to delivery system"
+          }
+        }
+      },
+      {
+        "id": "c988b39a-499b-478a-8246-b2972fac418a",
+        "name": "Note",
+        "type": "n8n-nodes-base.stickyNote",
+        "typeVersion": 1,
+        "position": [
+          0,
+          380
+        ],
+        "parameters": {
+          "content": "## WhatsApp (OpenWA)\nOpenWA envia cada mensaje a este webhook. Solo responde a los numeros de la lista ALLOW de 'Filter message'. La memoria es por telefono. Las respuestas salen por `send-text` de la sesion `delivery-system`.",
+          "color": 4,
+          "width": 360,
+          "height": 180
+        }
+      }
+    ],
+    "connections": {
+      "OpenWA webhook": {
+        "main": [
+          [
+            {
+              "node": "Filter message",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Filter message": {
+        "main": [
+          [
+            {
+              "node": "Should answer?",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Should answer?": {
+        "main": [
+          [
+            {
+              "node": "WhatsApp front desk",
+              "type": "main",
+              "index": 0
+            }
+          ],
+          [
+            {
+              "node": "Log ignored",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "WhatsApp front desk": {
+        "main": [
+          [
+            {
+              "node": "Prepare reply",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Prepare reply": {
+        "main": [
+          [
+            {
+              "node": "Send reply",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Send reply": {
+        "main": [
+          [
+            {
+              "node": "Log reply",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Claude (WhatsApp)": {
+        "ai_languageModel": [
+          [
+            {
+              "node": "WhatsApp front desk",
+              "type": "ai_languageModel",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Memory per phone": {
+        "ai_memory": [
+          [
+            {
+              "node": "WhatsApp front desk",
+              "type": "ai_memory",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Order agent": {
+        "ai_tool": [
+          [
+            {
+              "node": "WhatsApp front desk",
+              "type": "ai_tool",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Support agent": {
+        "ai_tool": [
+          [
+            {
+              "node": "WhatsApp front desk",
+              "type": "ai_tool",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Products": {
+        "ai_tool": [
+          [
+            {
+              "node": "WhatsApp front desk",
+              "type": "ai_tool",
+              "index": 0
+            }
+          ]
+        ]
+      }
+    },
+    "settings": {
+      "executionOrder": "v1",
+      "timezone": "America/Santo_Domingo",
+      "availableInMCP": true
+    },
+    "pinData": {},
+    "tags": []
+  }
+]
