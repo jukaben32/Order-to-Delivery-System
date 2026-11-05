@@ -1,0 +1,1084 @@
+{
+  "updatedAt": "2026-11-05T01:37:54.845Z",
+  "createdAt": "2026-11-05T01:34:35.836Z",
+  "id": "yVb6OIXeGvPOBYuB",
+  "name": "Demo Traders - Create Order",
+  "description": null,
+  "active": false,
+  "isArchived": false,
+  "nodes": [
+    {
+      "id": "2956631f-684a-44c4-8a3f-33d5656591f7",
+      "name": "Create order trigger",
+      "type": "n8n-nodes-base.executeWorkflowTrigger",
+      "typeVersion": 1.3,
+      "position": [
+        0,
+        96
+      ],
+      "parameters": {
+        "inputSource": "passthrough"
+      }
+    },
+    {
+      "id": "22c885bb-78c2-4716-9950-cb77013c8205",
+      "name": "Read catalog",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        224,
+        96
+      ],
+      "parameters": {
+        "resource": "sheet",
+        "operation": "read",
+        "documentId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "1uFc0RmztEiY9tcsNGLe0bExBuhJ5Zxjp6j-J7WfYYjc"
+        },
+        "sheetName": {
+          "__rl": true,
+          "mode": "name",
+          "value": "Products"
+        }
+      },
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "uVqG7fQd8cxSfaMU",
+          "name": "order to delivery system"
+        }
+      },
+      "retryOnFail": true,
+      "maxTries": 5,
+      "waitBetweenTries": 5000
+    },
+    {
+      "id": "aeab97f4-28dc-4be6-8f72-eb9d2ab50b6f",
+      "name": "Validate and price",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        448,
+        96
+      ],
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "language": "javaScript",
+        "jsCode": "const input = $('Create order trigger').first().json;\nconst products = $input.all().map(function (i) { return i.json; }).filter(function (p) { return p.SKU; });\nfunction money(n) { return 'RD$ ' + Number(n).toLocaleString('en-US'); }\nconst c = input.customer || {};\nconst customer = {\n  name: String(c.name || '').trim().slice(0, 80),\n  phone: String(c.phone || '').trim().slice(0, 30),\n  email: String(c.email || '').trim().toLowerCase().slice(0, 120),\n  address: String(c.address || '').trim().slice(0, 200),\n  city: String(c.city || '').trim().slice(0, 60)\n};\nconst errors = [];\nif (customer.name.length < 2) { errors.push('Escribe tu nombre.'); }\nif (customer.phone.replace(/\\D/g, '').length < 7) { errors.push('Escribe un teléfono válido.'); }\nif (!/^[^@\\s]+@[^@\\s]+\\.[^@\\s]+$/.test(customer.email)) { errors.push('Escribe un correo válido.'); }\nif (customer.address.length < 5) { errors.push('Escribe tu dirección de entrega.'); }\nconst raw = Array.isArray(input.items) ? input.items : [];\nif (raw.length > 60) { errors.push('El pedido tiene demasiados productos distintos.'); }\nconst merged = {};\nraw.slice(0, 60).forEach(function (it) {\n  const sku = String((it && it.sku) || '').trim();\n  const qty = Math.round(Number(it && it.qty));\n  if (!sku || !(qty > 0)) { return; }\n  merged[sku] = (merged[sku] || 0) + qty;\n});\nconst skus = Object.keys(merged);\nif (!skus.length) { errors.push('Tu carrito está vacío.'); }\nconst items = [];\nlet subtotal = 0;\nskus.forEach(function (sku) {\n  const p = products.find(function (x) { return String(x.SKU) === sku; });\n  const qty = merged[sku];\n  if (!p) { errors.push('El producto ' + sku + ' ya no está disponible.'); return; }\n  if (qty > 99) { errors.push('La cantidad máxima por producto es 99 (' + p.Name + ').'); return; }\n  const stock = Number(p.Stock) || 0;\n  if (qty > stock) { errors.push('No hay suficiente existencia de ' + p.Name + ' (quedan ' + stock + ').'); return; }\n  const price = Number(p.Price) || 0;\n  const lineTotal = price * qty;\n  subtotal += lineTotal;\n  items.push({ sku: sku, qty: qty, name: p.Name, price: price, line_total: lineTotal });\n});\nconst discount = 0;\nconst total = subtotal - discount;\nreturn [{ json: { ok: errors.length === 0, errors: errors, items: items, subtotal: subtotal, discount: discount, total: total, customer: customer, channel: String(input.channel || 'Web').slice(0, 20), payment_method: String(input.payment_method || 'cash_on_delivery').slice(0, 30) } }];"
+      },
+      "notes": "Why Code: THIS is where money is calculated. The browser only sends SKU + quantity; prices come from the Products sheet. Also validates customer data, SKUs, quantities and stock."
+    },
+    {
+      "id": "174326be-054f-4f48-87b5-1d602b9548ab",
+      "name": "Order valid?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.4,
+      "position": [
+        672,
+        96
+      ],
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict"
+          },
+          "conditions": [
+            {
+              "leftValue": "={{ $json.ok }}",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        }
+      }
+    },
+    {
+      "id": "2fc2d4f6-0a39-4046-8aa6-701bdfed7a7d",
+      "name": "Read customers",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        896,
+        0
+      ],
+      "parameters": {
+        "resource": "sheet",
+        "operation": "read",
+        "documentId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "1uFc0RmztEiY9tcsNGLe0bExBuhJ5Zxjp6j-J7WfYYjc"
+        },
+        "sheetName": {
+          "__rl": true,
+          "mode": "name",
+          "value": "Customers"
+        }
+      },
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "uVqG7fQd8cxSfaMU",
+          "name": "order to delivery system"
+        }
+      },
+      "retryOnFail": true,
+      "maxTries": 5,
+      "waitBetweenTries": 5000,
+      "alwaysOutputData": true
+    },
+    {
+      "id": "d5840d89-f4d3-40d7-88bd-68607634e293",
+      "name": "Read orders",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        1120,
+        0
+      ],
+      "parameters": {
+        "resource": "sheet",
+        "operation": "read",
+        "documentId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "1uFc0RmztEiY9tcsNGLe0bExBuhJ5Zxjp6j-J7WfYYjc"
+        },
+        "sheetName": {
+          "__rl": true,
+          "mode": "name",
+          "value": "Orders"
+        }
+      },
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "uVqG7fQd8cxSfaMU",
+          "name": "order to delivery system"
+        }
+      },
+      "executeOnce": true,
+      "retryOnFail": true,
+      "maxTries": 5,
+      "waitBetweenTries": 5000,
+      "alwaysOutputData": true
+    },
+    {
+      "id": "9a0b4825-edd9-4f6f-998f-626c2f04af68",
+      "name": "Assign IDs",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1344,
+        0
+      ],
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "language": "javaScript",
+        "jsCode": "const p = $('Validate and price').first().json;\nconst customers = $('Read customers').all().map(function (i) { return i.json; }).filter(function (c) { return c.Customer_ID; });\nconst orders = $input.all().map(function (i) { return i.json; }).filter(function (o) { return o.Order_ID; });\nfunction digits(s) { return String(s || '').replace(/\\D/g, ''); }\nconst existing = customers.find(function (c) { return (digits(c.Phone) && digits(c.Phone) === digits(p.customer.phone)) || (String(c.Email || '').toLowerCase() === p.customer.email); });\nlet maxC = 1000;\ncustomers.forEach(function (c) { const m = String(c.Customer_ID).match(/^CUS-(\\d+)$/); if (m && Number(m[1]) > maxC) { maxC = Number(m[1]); } });\nlet maxO = 1000;\norders.forEach(function (o) { const m = String(o.Order_ID).match(/^ORD-(\\d+)$/); if (m && Number(m[1]) > maxO) { maxO = Number(m[1]); } });\nconst customerId = existing ? existing.Customer_ID : 'CUS-' + (maxC + 1);\nconst orderId = 'ORD-' + (maxO + 1);\nconst itemsText = p.items.map(function (i) { return i.sku + ' x' + i.qty; }).join('; ');\nreturn [{ json: { order_id: orderId, customer_id: customerId, date: $now.toFormat('yyyy-MM-dd'), items_text: itemsText, customer_row: { Customer_ID: customerId, Name: p.customer.name, Phone: p.customer.phone, Email: p.customer.email, Address: p.customer.address, City: p.customer.city, Created_At: existing && existing.Created_At ? existing.Created_At : $now.toFormat('yyyy-MM-dd HH:mm:ss') } } }];"
+      },
+      "notes": "Why Code: reuses the Customer_ID when the phone or email already exists, otherwise makes the next CUS number; makes the next ORD number (first is ORD-1001). Ignores the empty placeholder row."
+    },
+    {
+      "id": "d7db8c8a-c191-4db7-9a17-431722049175",
+      "name": "Save customer",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        1568,
+        0
+      ],
+      "parameters": {
+        "resource": "sheet",
+        "operation": "appendOrUpdate",
+        "documentId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "1uFc0RmztEiY9tcsNGLe0bExBuhJ5Zxjp6j-J7WfYYjc"
+        },
+        "sheetName": {
+          "__rl": true,
+          "mode": "name",
+          "value": "Customers"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Customer_ID": "={{ $json.customer_row.Customer_ID }}",
+            "Name": "={{ $json.customer_row.Name }}",
+            "Phone": "={{ $json.customer_row.Phone }}",
+            "Email": "={{ $json.customer_row.Email }}",
+            "Address": "={{ $json.customer_row.Address }}",
+            "City": "={{ $json.customer_row.City }}",
+            "Created_At": "={{ $json.customer_row.Created_At }}"
+          },
+          "matchingColumns": [
+            "Customer_ID"
+          ],
+          "schema": [
+            {
+              "id": "Customer_ID",
+              "displayName": "Customer_ID",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Name",
+              "displayName": "Name",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": false
+            },
+            {
+              "id": "Phone",
+              "displayName": "Phone",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": false
+            },
+            {
+              "id": "Email",
+              "displayName": "Email",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": false
+            },
+            {
+              "id": "Address",
+              "displayName": "Address",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": false
+            },
+            {
+              "id": "City",
+              "displayName": "City",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": false
+            },
+            {
+              "id": "Created_At",
+              "displayName": "Created_At",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": false
+            }
+          ]
+        },
+        "options": {
+          "cellFormat": "RAW"
+        }
+      },
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "uVqG7fQd8cxSfaMU",
+          "name": "order to delivery system"
+        }
+      },
+      "retryOnFail": true,
+      "maxTries": 5,
+      "waitBetweenTries": 5000
+    },
+    {
+      "id": "dff5e4e9-506b-4de4-9077-c4997b0f555f",
+      "name": "Save order",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        1792,
+        0
+      ],
+      "parameters": {
+        "resource": "sheet",
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "1uFc0RmztEiY9tcsNGLe0bExBuhJ5Zxjp6j-J7WfYYjc"
+        },
+        "sheetName": {
+          "__rl": true,
+          "mode": "name",
+          "value": "Orders"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Order_ID": "={{ $(\"Assign IDs\").first().json.order_id }}",
+            "Date": "={{ $(\"Assign IDs\").first().json.date }}",
+            "Customer_ID": "={{ $(\"Assign IDs\").first().json.customer_id }}",
+            "Items": "={{ $(\"Assign IDs\").first().json.items_text }}",
+            "Subtotal": "={{ $(\"Validate and price\").first().json.subtotal }}",
+            "Discount": "={{ $(\"Validate and price\").first().json.discount }}",
+            "Total": "={{ $(\"Validate and price\").first().json.total }}",
+            "Status": "New",
+            "Payment_Status": "Unpaid",
+            "Channel": "={{ $(\"Validate and price\").first().json.channel }}"
+          },
+          "schema": [
+            {
+              "id": "Order_ID",
+              "displayName": "Order_ID",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Date",
+              "displayName": "Date",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Customer_ID",
+              "displayName": "Customer_ID",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Items",
+              "displayName": "Items",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Subtotal",
+              "displayName": "Subtotal",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Discount",
+              "displayName": "Discount",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Total",
+              "displayName": "Total",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Status",
+              "displayName": "Status",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Payment_Status",
+              "displayName": "Payment_Status",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Channel",
+              "displayName": "Channel",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            }
+          ]
+        },
+        "options": {
+          "cellFormat": "RAW"
+        }
+      },
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "uVqG7fQd8cxSfaMU",
+          "name": "order to delivery system"
+        }
+      },
+      "retryOnFail": true,
+      "maxTries": 5,
+      "waitBetweenTries": 5000
+    },
+    {
+      "id": "84340c27-7c24-472e-8608-ec44d512adce",
+      "name": "Log order created",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        2016,
+        0
+      ],
+      "parameters": {
+        "resource": "sheet",
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "1uFc0RmztEiY9tcsNGLe0bExBuhJ5Zxjp6j-J7WfYYjc"
+        },
+        "sheetName": {
+          "__rl": true,
+          "mode": "name",
+          "value": "Activity_Log"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Time": "={{ $now.toFormat(\"yyyy-MM-dd HH:mm:ss\") }}",
+            "Agent": "Order",
+            "Action": "order_created",
+            "Ref_ID": "={{ $(\"Assign IDs\").first().json.order_id }}",
+            "Details": "={{ $(\"Validate and price\").first().json.channel }}: {{ $(\"Assign IDs\").first().json.items_text }}; total {{ $(\"Validate and price\").first().json.total }}; pago {{ $(\"Validate and price\").first().json.payment_method }}"
+          },
+          "schema": [
+            {
+              "id": "Time",
+              "displayName": "Time",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Agent",
+              "displayName": "Agent",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Action",
+              "displayName": "Action",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Ref_ID",
+              "displayName": "Ref_ID",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Details",
+              "displayName": "Details",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            }
+          ]
+        },
+        "options": {
+          "cellFormat": "RAW"
+        }
+      },
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "uVqG7fQd8cxSfaMU",
+          "name": "order to delivery system"
+        }
+      },
+      "retryOnFail": true,
+      "maxTries": 5,
+      "waitBetweenTries": 5000
+    },
+    {
+      "id": "85bc8553-cf99-491c-a77a-c8f089dd3b77",
+      "name": "Payload for Inventory",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.5,
+      "position": [
+        2240,
+        0
+      ],
+      "parameters": {
+        "mode": "manual",
+        "assignments": {
+          "assignments": [
+            {
+              "id": "i1",
+              "name": "order_id",
+              "value": "={{ $(\"Assign IDs\").first().json.order_id }}",
+              "type": "string"
+            },
+            {
+              "id": "i2",
+              "name": "items",
+              "value": "={{ $(\"Validate and price\").first().json.items.map(function (i) { return { sku: i.sku, qty: i.qty }; }) }}",
+              "type": "array"
+            }
+          ]
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "4254deed-d493-44fc-99d8-1e3f918e9b12",
+      "name": "Call Inventory",
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1.4,
+      "position": [
+        2464,
+        0
+      ],
+      "parameters": {
+        "source": "database",
+        "workflowId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "fGGKvzd1Fj1g1eXZ",
+          "cachedResultName": "Demo Traders - Inventory"
+        },
+        "mode": "once",
+        "options": {
+          "waitForSubWorkflow": true
+        }
+      },
+      "alwaysOutputData": true
+    },
+    {
+      "id": "8d6eba21-75ed-486f-bfda-c876a3882bc3",
+      "name": "Payload for Billing",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.5,
+      "position": [
+        2688,
+        0
+      ],
+      "parameters": {
+        "mode": "manual",
+        "assignments": {
+          "assignments": [
+            {
+              "id": "b1",
+              "name": "order_id",
+              "value": "={{ $(\"Assign IDs\").first().json.order_id }}",
+              "type": "string"
+            },
+            {
+              "id": "b2",
+              "name": "order_date",
+              "value": "={{ $(\"Assign IDs\").first().json.date }}",
+              "type": "string"
+            },
+            {
+              "id": "b3",
+              "name": "total",
+              "value": "={{ $(\"Validate and price\").first().json.total }}",
+              "type": "number"
+            },
+            {
+              "id": "b4",
+              "name": "customer_name",
+              "value": "={{ $(\"Validate and price\").first().json.customer.name }}",
+              "type": "string"
+            },
+            {
+              "id": "b5",
+              "name": "customer_email",
+              "value": "={{ $(\"Validate and price\").first().json.customer.email }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "01838c6a-47d2-4fa6-ba94-29adeb0946cc",
+      "name": "Call Billing",
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1.4,
+      "position": [
+        2912,
+        0
+      ],
+      "parameters": {
+        "source": "database",
+        "workflowId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "rWiEuk09Jwbn2sqb",
+          "cachedResultName": "Demo Traders - Billing"
+        },
+        "mode": "once",
+        "options": {
+          "waitForSubWorkflow": true
+        }
+      },
+      "alwaysOutputData": true
+    },
+    {
+      "id": "2919ca96-a3e7-43e7-8447-dee1c1590210",
+      "name": "Payload for Dispatch",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.5,
+      "position": [
+        3136,
+        0
+      ],
+      "parameters": {
+        "mode": "manual",
+        "assignments": {
+          "assignments": [
+            {
+              "id": "p1",
+              "name": "order_id",
+              "value": "={{ $(\"Assign IDs\").first().json.order_id }}",
+              "type": "string"
+            },
+            {
+              "id": "p2",
+              "name": "customer_name",
+              "value": "={{ $(\"Validate and price\").first().json.customer.name }}",
+              "type": "string"
+            },
+            {
+              "id": "p3",
+              "name": "customer_email",
+              "value": "={{ $(\"Validate and price\").first().json.customer.email }}",
+              "type": "string"
+            },
+            {
+              "id": "p4",
+              "name": "address",
+              "value": "={{ $(\"Validate and price\").first().json.customer.address }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "481920ff-e13e-4b11-bf16-5b7634270e53",
+      "name": "Call Dispatch",
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1.4,
+      "position": [
+        3360,
+        0
+      ],
+      "parameters": {
+        "source": "database",
+        "workflowId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "NfjlqnvpnWFX7lYa",
+          "cachedResultName": "Demo Traders - Dispatch"
+        },
+        "mode": "once",
+        "options": {
+          "waitForSubWorkflow": true
+        }
+      },
+      "alwaysOutputData": true
+    },
+    {
+      "id": "9cc81134-8a8d-457f-960f-f99905179b10",
+      "name": "Build result",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        3584,
+        0
+      ],
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "language": "javaScript",
+        "jsCode": "const p = $('Validate and price').first().json;\nconst a = $('Assign IDs').first().json;\nconst inv = $('Call Billing').first().json;\nconst dsp = $('Call Dispatch').first().json;\nreturn [{ json: { ok: true, order_id: a.order_id, total: p.total, invoice_no: inv.invoice_no || '', due_date: inv.due_date || '', dispatch_status: dsp.dispatch_status || '', rider_name: dsp.rider_name || '', vehicle: dsp.vehicle || '', email: p.customer.email, payment_method: p.payment_method, lines: p.items.map(function (i) { return { name: i.name, qty: i.qty, line_total: i.line_total }; }) } }];"
+      },
+      "notes": "Why Code: assembles the final answer from real results (order, invoice, rider). Amounts come from Validate and price."
+    },
+    {
+      "id": "4a7e88b1-c61e-4b49-a620-1a659789f7ea",
+      "name": "Log rejected order",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        896,
+        192
+      ],
+      "parameters": {
+        "resource": "sheet",
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "1uFc0RmztEiY9tcsNGLe0bExBuhJ5Zxjp6j-J7WfYYjc"
+        },
+        "sheetName": {
+          "__rl": true,
+          "mode": "name",
+          "value": "Activity_Log"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Time": "={{ $now.toFormat(\"yyyy-MM-dd HH:mm:ss\") }}",
+            "Agent": "Order",
+            "Action": "order_rejected",
+            "Ref_ID": "",
+            "Details": "={{ $json.channel }}: {{ $json.errors.join(\" | \").slice(0, 300) }}"
+          },
+          "schema": [
+            {
+              "id": "Time",
+              "displayName": "Time",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Agent",
+              "displayName": "Agent",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Action",
+              "displayName": "Action",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Ref_ID",
+              "displayName": "Ref_ID",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Details",
+              "displayName": "Details",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            }
+          ]
+        },
+        "options": {
+          "cellFormat": "RAW"
+        }
+      },
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "uVqG7fQd8cxSfaMU",
+          "name": "order to delivery system"
+        }
+      },
+      "retryOnFail": true,
+      "maxTries": 5,
+      "waitBetweenTries": 5000
+    },
+    {
+      "id": "2707ac3d-1b27-4e6e-a751-d2c8cc9745b3",
+      "name": "Rejected result",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.5,
+      "position": [
+        1120,
+        192
+      ],
+      "parameters": {
+        "mode": "manual",
+        "assignments": {
+          "assignments": [
+            {
+              "id": "x1",
+              "name": "ok",
+              "value": false,
+              "type": "boolean"
+            },
+            {
+              "id": "x2",
+              "name": "errors",
+              "value": "={{ $(\"Validate and price\").first().json.errors }}",
+              "type": "array"
+            }
+          ]
+        },
+        "options": {}
+      }
+    }
+  ],
+  "connections": {
+    "Create order trigger": {
+      "main": [
+        [
+          {
+            "node": "Read catalog",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Read catalog": {
+      "main": [
+        [
+          {
+            "node": "Validate and price",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Validate and price": {
+      "main": [
+        [
+          {
+            "node": "Order valid?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Order valid?": {
+      "main": [
+        [
+          {
+            "node": "Read customers",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Log rejected order",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Read customers": {
+      "main": [
+        [
+          {
+            "node": "Read orders",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Read orders": {
+      "main": [
+        [
+          {
+            "node": "Assign IDs",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Assign IDs": {
+      "main": [
+        [
+          {
+            "node": "Save customer",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Save customer": {
+      "main": [
+        [
+          {
+            "node": "Save order",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Save order": {
+      "main": [
+        [
+          {
+            "node": "Log order created",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Log order created": {
+      "main": [
+        [
+          {
+            "node": "Payload for Inventory",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Payload for Inventory": {
+      "main": [
+        [
+          {
+            "node": "Call Inventory",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Call Inventory": {
+      "main": [
+        [
+          {
+            "node": "Payload for Billing",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Payload for Billing": {
+      "main": [
+        [
+          {
+            "node": "Call Billing",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Call Billing": {
+      "main": [
+        [
+          {
+            "node": "Payload for Dispatch",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Payload for Dispatch": {
+      "main": [
+        [
+          {
+            "node": "Call Dispatch",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Call Dispatch": {
+      "main": [
+        [
+          {
+            "node": "Build result",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Log rejected order": {
+      "main": [
+        [
+          {
+            "node": "Rejected result",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "availableInMCP": true,
+    "timezone": "America/Santo_Domingo"
+  },
+  "meta": {
+    "aiBuilderAssisted": true,
+    "builderVariant": "mcp"
+  },
+  "nodeGroups": [],
+  "versionId": "96229fde-4898-4066-8288-a48fedf22101",
+  "activeVersionId": "96229fde-4898-4066-8288-a48fedf22101",
+  "sourceWorkflowId": null,
+  "versionMetadata": {
+    "name": "Create Order: shared core for web and chat orders",
+    "description": "Created with 19 nodes: Create order trigger, Read catalog, Validate and price, Order valid?, Read customers and 14 more"
+  }
+}

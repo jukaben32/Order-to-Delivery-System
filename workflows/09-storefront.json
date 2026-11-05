@@ -1,0 +1,467 @@
+{
+  "updatedAt": "2026-11-05T01:39:07.422Z",
+  "createdAt": "2026-11-05T01:39:07.422Z",
+  "id": "StoreFrontDemo01",
+  "name": "Demo Traders - Storefront",
+  "description": null,
+  "active": false,
+  "isArchived": false,
+  "nodes": [
+    {
+      "id": "19ad04f5-63d5-4347-b167-0447ca207dc7",
+      "name": "Store page",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.2,
+      "position": [
+        0,
+        0
+      ],
+      "webhookId": "12b0cbd5-73d8-43ec-a4f3-9403cfc9024a",
+      "parameters": {
+        "httpMethod": "GET",
+        "path": "tienda",
+        "responseMode": "responseNode",
+        "options": {}
+      }
+    },
+    {
+      "id": "3edb0669-0994-4785-8463-e29b19fba431",
+      "name": "Send store page",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.5,
+      "position": [
+        260,
+        0
+      ],
+      "notes": "Serves the storefront HTML (source file: storefront/index.html).",
+      "parameters": {
+        "respondWith": "text",
+        "responseBody": "<!doctype html>\n<html lang=\"es\">\n<head>\n<meta charset=\"utf-8\">\n<meta name=\"viewport\" content=\"width=device-width, initial-scale=1\">\n<title>Demo Traders | Colmado en línea</title>\n<meta name=\"description\" content=\"Escoge tus productos, arma tu carrito y recibe tu pedido en casa.\">\n<style>\n:root{--g:#0e7a4b;--gd:#0a5c38;--gl:#e7f5ed;--ink:#13221a;--mu:#5b6a61;--ln:#e2e9e4;--bg:#f5f7f5;--w:#fff;--am:#b45309;--rd:#b42318;--r:14px;--sh:0 1px 2px rgba(16,40,28,.06),0 10px 28px rgba(16,40,28,.07)}\n*{box-sizing:border-box}\nhtml{scroll-behavior:smooth}\nbody{margin:0;font-family:-apple-system,BlinkMacSystemFont,\"Segoe UI\",Roboto,Helvetica,Arial,sans-serif;color:var(--ink);background:var(--bg);line-height:1.45;-webkit-font-smoothing:antialiased}\nbutton,input,select,textarea{font:inherit;color:inherit}\nbutton{cursor:pointer}\na{color:var(--g)}\n.sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}\n:focus-visible{outline:3px solid #7bd3a5;outline-offset:2px}\n.top{position:sticky;top:0;z-index:20;background:rgba(255,255,255,.92);backdrop-filter:saturate(1.4) blur(10px);border-bottom:1px solid var(--ln)}\n.top .in{max-width:1180px;margin:0 auto;padding:12px 18px;display:flex;align-items:center;gap:14px}\n.brand{display:flex;align-items:center;gap:10px;font-weight:800;font-size:1.15rem;letter-spacing:-.01em;white-space:nowrap}\n.logo{width:36px;height:36px;border-radius:11px;background:linear-gradient(135deg,var(--g),#16a366);display:grid;place-items:center;color:#fff;font-size:1.15rem}\n.search{flex:1;position:relative;min-width:0}\n.search input{width:100%;height:42px;border:1px solid var(--ln);border-radius:999px;padding:0 16px 0 42px;background:#fff;font-size:.95rem}\n.search input:focus{border-color:var(--g);outline:none;box-shadow:0 0 0 3px rgba(14,122,75,.15)}\n.search .ic{position:absolute;left:15px;top:50%;transform:translateY(-50%);color:var(--mu);pointer-events:none}\n.cartbtn{position:relative;height:42px;padding:0 16px;border:0;border-radius:999px;background:var(--g);color:#fff;font-weight:700;display:flex;align-items:center;gap:8px;white-space:nowrap;transition:background .15s}\n.cartbtn:hover{background:var(--gd)}\n.cartbtn .n{min-width:22px;height:22px;border-radius:11px;background:#fff;color:var(--g);font-size:.8rem;display:grid;place-items:center;padding:0 6px}\n.hero{max-width:1180px;margin:22px auto 6px;padding:0 18px}\n.hero .box{border-radius:20px;padding:26px 28px;background:linear-gradient(120deg,#0e7a4b,#14a063 60%,#3dbd86);color:#fff;display:flex;justify-content:space-between;align-items:center;gap:18px;flex-wrap:wrap;box-shadow:var(--sh)}\n.hero h1{margin:0 0 4px;font-size:1.6rem;letter-spacing:-.02em}\n.hero p{margin:0;opacity:.92}\n.perks{display:flex;gap:10px;flex-wrap:wrap}\n.perk{background:rgba(255,255,255,.16);border:1px solid rgba(255,255,255,.28);padding:7px 12px;border-radius:999px;font-size:.85rem;font-weight:600}\n.wrap{max-width:1180px;margin:0 auto;padding:0 18px 90px}\n.chips{display:flex;gap:8px;overflow-x:auto;padding:16px 0 10px;scrollbar-width:none}\n.chips::-webkit-scrollbar{display:none}\n.chip{flex:none;border:1px solid var(--ln);background:#fff;border-radius:999px;padding:8px 15px;font-weight:600;font-size:.9rem;color:var(--mu);transition:all .15s}\n.chip:hover{border-color:var(--g);color:var(--g)}\n.chip[aria-pressed=\"true\"]{background:var(--g);border-color:var(--g);color:#fff}\n.meta{display:flex;justify-content:space-between;align-items:center;margin:6px 0 14px;color:var(--mu);font-size:.9rem}\n.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(168px,1fr));gap:16px}\n.card{background:var(--w);border:1px solid var(--ln);border-radius:var(--r);overflow:hidden;display:flex;flex-direction:column;box-shadow:var(--sh);transition:transform .15s,box-shadow .15s}\n.card:hover{transform:translateY(-2px)}\n.tile{position:relative;aspect-ratio:4/3;display:grid;place-items:center}\n.emo{font-size:3.6rem;filter:drop-shadow(0 6px 8px rgba(0,0,0,.12))}\n.badge{position:absolute;top:10px;left:10px;font-size:.72rem;font-weight:700;padding:4px 9px;border-radius:999px;background:#fff;color:var(--am)}\n.badge.out{color:var(--rd)}\n.cb{padding:12px 14px 14px;display:flex;flex-direction:column;gap:3px;flex:1}\n.cb h3{margin:0;font-size:.97rem;line-height:1.25}\n.unit{color:var(--mu);font-size:.82rem}\n.price{font-weight:800;font-size:1.08rem;margin-top:4px}\n.act{margin-top:auto;padding-top:10px}\n.btn{border:0;border-radius:11px;padding:10px 14px;font-weight:700;background:var(--g);color:#fff;transition:background .15s,opacity .15s;width:100%}\n.btn:hover{background:var(--gd)}\n.btn:disabled{opacity:.5;cursor:not-allowed}\n.btn.sec{background:#fff;color:var(--ink);border:1px solid var(--ln)}\n.btn.sec:hover{background:var(--gl)}\n.btn.link{background:none;color:var(--mu);font-weight:600;width:auto;padding:6px 4px;text-decoration:underline}\n.step{display:flex;align-items:center;justify-content:space-between;gap:8px}\n.q{display:inline-flex;align-items:center;border:1px solid var(--ln);border-radius:11px;overflow:hidden;background:#fff}\n.q button{width:34px;height:34px;border:0;background:#fff;font-size:1.15rem;font-weight:700;color:var(--g)}\n.q button:hover{background:var(--gl)}\n.q button:disabled{color:#b8c4bd;cursor:not-allowed}\n.q span{min-width:30px;text-align:center;font-weight:700}\n.empty,.err{text-align:center;color:var(--mu);padding:46px 10px}\n.sk{height:250px;border-radius:var(--r);background:linear-gradient(90deg,#eef2ef 25%,#f7f9f7 50%,#eef2ef 75%);background-size:200% 100%;animation:sh 1.2s infinite}\n@keyframes sh{to{background-position:-200% 0}}\n.ov{position:fixed;inset:0;background:rgba(10,24,17,.45);opacity:0;pointer-events:none;transition:opacity .2s;z-index:40}\n.ov.on{opacity:1;pointer-events:auto}\n.dr{position:fixed;top:0;right:0;bottom:0;width:min(440px,100%);background:#fff;z-index:50;transform:translateX(102%);transition:transform .25s ease;display:flex;flex-direction:column;box-shadow:-18px 0 40px rgba(10,24,17,.18)}\n.dr.on{transform:none}\n.dh{padding:16px 18px;border-bottom:1px solid var(--ln);display:flex;align-items:center;justify-content:space-between}\n.dh h2{margin:0;font-size:1.15rem}\n.x{border:0;background:var(--bg);width:34px;height:34px;border-radius:50%;font-size:1.2rem;color:var(--mu)}\n.steps{display:flex;gap:6px;padding:12px 18px 0}\n.steps i{flex:1;height:4px;border-radius:2px;background:var(--ln)}\n.steps i.on{background:var(--g)}\n.db{flex:1;overflow:auto;padding:14px 18px}\n.df{padding:14px 18px;border-top:1px solid var(--ln);background:#fff;display:flex;flex-direction:column;gap:10px}\n.line{display:grid;grid-template-columns:58px 1fr auto;gap:12px;align-items:center;padding:12px 0;border-bottom:1px solid var(--ln)}\n.mini{width:58px;height:58px;border-radius:12px;display:grid;place-items:center;font-size:1.9rem}\n.line h4{margin:0 0 2px;font-size:.93rem;line-height:1.25}\n.line .sub{color:var(--mu);font-size:.82rem}\n.line .rt{text-align:right;display:flex;flex-direction:column;align-items:flex-end;gap:6px}\n.line .rm{border:0;background:none;color:var(--mu);font-size:.8rem;text-decoration:underline;padding:0}\n.tot{display:flex;justify-content:space-between;font-size:1.05rem;font-weight:800}\n.note{font-size:.8rem;color:var(--mu)}\n.f{display:grid;gap:12px}\n.f label{display:grid;gap:5px;font-size:.85rem;font-weight:700}\n.f input,.f textarea{border:1px solid var(--ln);border-radius:11px;padding:11px 12px;background:#fff;font-weight:400}\n.f input:focus,.f textarea:focus{border-color:var(--g);outline:none;box-shadow:0 0 0 3px rgba(14,122,75,.15)}\n.f .two{display:grid;grid-template-columns:1fr 1fr;gap:10px}\n.hp{position:absolute;left:-9999px;width:1px;height:1px;overflow:hidden}\n.pay{display:grid;gap:8px}\n.f .po{display:flex;gap:10px;align-items:flex-start;border:1px solid var(--ln);border-radius:12px;padding:11px 12px;cursor:pointer;font-weight:400;font-size:.9rem}\n.po input{margin-top:3px;accent-color:var(--g)}\n.po.sel{border-color:var(--g);background:var(--gl)}\n.po.dis{opacity:.55;cursor:not-allowed}\n.po b{display:block;font-size:.92rem}\n.po small{color:var(--mu)}\n.errbox{background:#fef3f2;border:1px solid #fecdca;color:var(--rd);border-radius:12px;padding:10px 12px;font-size:.88rem;margin-bottom:14px}\n.step .unit{white-space:nowrap;font-weight:700;color:var(--ink);font-size:.8rem}\n.errbox ul{margin:4px 0 0;padding-left:18px}\n.okc{text-align:center;padding:12px 4px}\n.okc .ck{width:64px;height:64px;border-radius:50%;background:var(--gl);color:var(--g);display:grid;place-items:center;font-size:2rem;margin:6px auto 12px}\n.okc h3{margin:0 0 4px;font-size:1.3rem}\n.sum{background:var(--bg);border-radius:12px;padding:12px 14px;margin:14px 0;text-align:left;font-size:.9rem}\n.sum div{display:flex;justify-content:space-between;gap:10px;padding:3px 0}\n.toast{position:fixed;left:50%;bottom:22px;transform:translate(-50%,30px);background:#13221a;color:#fff;padding:11px 18px;border-radius:999px;font-size:.9rem;font-weight:600;opacity:0;pointer-events:none;transition:all .25s;z-index:70;max-width:90vw}\n.toast.on{opacity:1;transform:translate(-50%,0)}\nfooter{max-width:1180px;margin:0 auto;padding:0 18px 40px;color:var(--mu);font-size:.82rem;text-align:center}\n@media (max-width:640px){\n .top .in{flex-wrap:wrap}\n .search{order:3;flex-basis:100%}\n .hero h1{font-size:1.3rem}\n .grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}\n .cb{padding:10px 11px 12px}\n .step{flex-wrap:wrap}\n .emo{font-size:3rem}\n .f .two{grid-template-columns:1fr}\n}\n@media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}\n</style>\n</head>\n<body>\n<header class=\"top\"><div class=\"in\">\n <div class=\"brand\"><span class=\"logo\" aria-hidden=\"true\">&#128722;</span><span>Demo Traders</span></div>\n <div class=\"search\"><span class=\"ic\" aria-hidden=\"true\">&#128269;</span><label class=\"sr\" for=\"q\">Buscar productos</label><input id=\"q\" type=\"search\" placeholder=\"Buscar arroz, aceite, leche...\" autocomplete=\"off\"></div>\n <button class=\"cartbtn\" id=\"openCart\" aria-label=\"Abrir carrito\"><span aria-hidden=\"true\">&#128717;</span><span>Carrito</span><span class=\"n\" id=\"cartN\">0</span></button>\n</div></header>\n\n<section class=\"hero\"><div class=\"box\">\n <div><h1>Tu colmado, en línea</h1><p>Escoge lo que necesitas, arma tu carrito y recibe tu pedido en casa.</p></div>\n <div class=\"perks\"><span class=\"perk\">&#128666; Entrega a domicilio</span><span class=\"perk\">&#128181; Pago contra entrega</span><span class=\"perk\">&#129534; Factura por correo</span></div>\n</div></section>\n\n<main class=\"wrap\">\n <nav class=\"chips\" id=\"chips\" aria-label=\"Categorías\"></nav>\n <div class=\"meta\"><span id=\"count\"></span><span>Precios en RD$</span></div>\n <div class=\"grid\" id=\"grid\" aria-live=\"polite\"></div>\n</main>\n<footer>Los totales finales los calcula y confirma el sistema al enviar el pedido. &copy; Demo Traders</footer>\n\n<div class=\"ov\" id=\"ov\"></div>\n<aside class=\"dr\" id=\"dr\" role=\"dialog\" aria-modal=\"true\" aria-labelledby=\"drT\" aria-hidden=\"true\">\n <div class=\"dh\"><h2 id=\"drT\">Tu carrito</h2><button class=\"x\" id=\"closeCart\" aria-label=\"Cerrar\">&times;</button></div>\n <div class=\"steps\" id=\"steps\"><i></i><i></i><i></i></div>\n <div class=\"db\" id=\"db\"></div>\n <div class=\"df\" id=\"df\"></div>\n</aside>\n<div class=\"toast\" id=\"toast\" role=\"status\" aria-live=\"polite\"></div>\n\n<script>\n(function () {\n'use strict';\nvar API_PRODUCTS = 'tienda-api/productos';\nvar API_ORDER = 'tienda-api/pedido';\nvar EMOJI = {'RICE-5KG':'🍚','OIL-1L':'🌻','SUGAR-2KG':'🍬','FLOUR-2KG':'🌾','BEANS-1KG':'🌰','SPAGH-500G':'🍝','SALT-1KG':'🧂','MILK-1L':'🥛','WASH-1KG':'🧺','TOMATO-400G':'🥫','BEANS-BLK-1KG':'🌰','LENTIL-1KG':'🌰','PIGEON-PEA-1KG':'🌱','CORN-MEAL-1KG':'🌽','OATS-400G':'🥣','COFFEE-454G':'☕','CHOCO-454G':'🍫','BUTTER-227G':'🧈','MARGARINE-200G':'🍞','CHEESE-FRY-LB':'🧀','SALAMI-LB':'🥩','MORTADELA-LB':'🥓','EGGS-30':'🥚','BREAD-WATER-6':'🍞','SARDINE-125G':'🐟','TUNA-170G':'🐟','SAUCE-TOM-8OZ':'🍅','SAZON-COMP':'🧄','ADOBO-8OZ':'🧂','OREGANO-30G':'🌿','GARLIC-LB':'🧄','ONION-LB':'🧅','TOMATO-LB':'🍅','PLANTAIN-UN':'🍌','YUCA-LB':'🥔','YAM-LB':'🍠','BANANA-LB':'🍌','LEMON-LB':'🍋','MALTA-355':'🥤','COLA-2L':'🥤','JUICE-1L':'🧃','WATER-5L':'💧','BEER-12OZ':'🍺','ICE-BAG':'🧊','DISH-SOAP-500':'🧴','BLEACH-1L':'🧴','TP-4':'🧻','TRASHBAG-10':'🗑️','SOAP-BAR':'🧼','TOOTHPASTE-75':'🦷'};\nvar COLORS = {'Granos':['#fff1cc','#ffd98a'],'Aceites':['#fff7c2','#ffe36b'],'Despensa':['#f1ecff','#d9ceff'],'Pastas':['#ffeccf','#ffcf8a'],'Lácteos':['#e6f3ff','#bcdcff'],'Limpieza':['#dff7f4','#a8ece4'],'Enlatados':['#ffe3e0','#ffb9b1'],'Desayuno':['#f7e8dc','#e8c3a3'],'Embutidos':['#ffe0e6','#ffb3c1'],'Huevos':['#fff3e0','#ffdca8'],'Panadería':['#fdebd3','#f5c98c'],'Condimentos':['#e5f6dd','#bce8a6'],'Vegetales':['#e1f6e0','#a9e3a4'],'Víveres':['#f3ead9','#dcc9a0'],'Frutas':['#fff2c9','#ffd36e'],'Bebidas':['#e1efff','#a9cdff'],'Higiene':['#f0e6fb','#d3b8f3']};\nvar state = { products: [], loaded: false, failed: false, cart: {}, cat: 'Todos', q: '', step: 'cart', busy: false, errors: [], order: null, form: { name: '', phone: '', email: '', address: '', city: '', notes: '' } };\n\nfunction $(id) { return document.getElementById(id); }\nfunction money(n) { return 'RD$ ' + Number(n).toLocaleString('es-DO'); }\nfunction norm(s) { return String(s || '').toLowerCase().replace(/á/g, 'a').replace(/é/g, 'e').replace(/í/g, 'i').replace(/ó/g, 'o').replace(/ú/g, 'u').replace(/ñ/g, 'n'); }\nfunction el(tag, attrs, kids) {\n  var e = document.createElement(tag);\n  if (attrs) { Object.keys(attrs).forEach(function (k) {\n    if (k === 'class') { e.className = attrs[k]; }\n    else if (k === 'text') { e.textContent = attrs[k]; }\n    else if (k.indexOf('on') === 0) { e.addEventListener(k.slice(2), attrs[k]); }\n    else if (attrs[k] !== false && attrs[k] !== null && attrs[k] !== undefined) { e.setAttribute(k, attrs[k] === true ? '' : attrs[k]); }\n  }); }\n  (kids || []).forEach(function (c) { if (c === null || c === undefined) { return; } e.appendChild(typeof c === 'string' ? document.createTextNode(c) : c); });\n  return e;\n}\nfunction store(key, val) { try { if (val === undefined) { return JSON.parse(localStorage.getItem(key) || 'null'); } localStorage.setItem(key, JSON.stringify(val)); } catch (e) { return null; } }\nfunction toast(msg) { var t = $('toast'); t.textContent = msg; t.classList.add('on'); clearTimeout(toast.t); toast.t = setTimeout(function () { t.classList.remove('on'); }, 2200); }\nfunction prod(sku) { for (var i = 0; i < state.products.length; i++) { if (state.products[i].sku === sku) { return state.products[i]; } } return null; }\nfunction grad(cat) { var c = COLORS[cat] || ['#eef3ef', '#dfe9e2']; return 'linear-gradient(135deg,' + c[0] + ',' + c[1] + ')'; }\n\n/* ---------- carrito ---------- */\nfunction saveCart() { store('dt_cart', state.cart); }\nfunction qty(sku) { return state.cart[sku] || 0; }\nfunction setQty(sku, n) {\n  var p = prod(sku); if (!p) { delete state.cart[sku]; }\n  else { n = Math.max(0, Math.min(n, p.stock, 99)); if (n === 0) { delete state.cart[sku]; } else { state.cart[sku] = n; } }\n  saveCart(); renderAll();\n}\nfunction cartLines() {\n  var out = [];\n  Object.keys(state.cart).forEach(function (sku) { var p = prod(sku); if (p) { out.push({ p: p, qty: state.cart[sku], total: p.price * state.cart[sku] }); } });\n  return out;\n}\nfunction cartCount() { return cartLines().reduce(function (s, l) { return s + l.qty; }, 0); }\nfunction cartTotal() { return cartLines().reduce(function (s, l) { return s + l.total; }, 0); }\n\n/* ---------- catálogo ---------- */\nfunction categories() { var seen = {}, list = ['Todos']; state.products.forEach(function (p) { if (p.category && !seen[p.category]) { seen[p.category] = 1; list.push(p.category); } }); return list; }\nfunction visible() {\n  var q = norm(state.q);\n  return state.products.filter(function (p) { return (state.cat === 'Todos' || p.category === state.cat) && (!q || norm(p.name).indexOf(q) >= 0 || norm(p.category).indexOf(q) >= 0); });\n}\nfunction renderChips() {\n  var box = $('chips'); box.textContent = '';\n  categories().forEach(function (c) { box.appendChild(el('button', { class: 'chip', type: 'button', 'aria-pressed': String(c === state.cat), text: c, onclick: function () { state.cat = c; renderChips(); renderGrid(); } })); });\n}\nfunction card(p) {\n  var n = qty(p.sku), out = p.stock <= 0, low = !out && p.stock <= 5;\n  var tile = el('div', { class: 'tile', style: 'background:' + grad(p.category) }, [\n    el('span', { class: 'emo', 'aria-hidden': 'true', text: EMOJI[p.sku] || '🛒' }),\n    out ? el('span', { class: 'badge out', text: 'Agotado' }) : (low ? el('span', { class: 'badge', text: 'Quedan ' + p.stock }) : null)\n  ]);\n  var act;\n  if (out) { act = el('button', { class: 'btn', type: 'button', disabled: true, text: 'No disponible' }); }\n  else if (n === 0) { act = el('button', { class: 'btn', type: 'button', text: 'Agregar', onclick: function () { setQty(p.sku, 1); toast('Agregado: ' + p.name); } }); }\n  else {\n    act = el('div', { class: 'step' }, [\n      el('div', { class: 'q' }, [\n        el('button', { type: 'button', 'aria-label': 'Quitar uno', text: '−', onclick: function () { setQty(p.sku, n - 1); } }),\n        el('span', { text: String(n) }),\n        el('button', { type: 'button', 'aria-label': 'Agregar uno', disabled: n >= p.stock, text: '+', onclick: function () { setQty(p.sku, n + 1); } })\n      ]),\n      el('span', { class: 'unit', text: money(p.price * n) })\n    ]);\n  }\n  return el('article', { class: 'card' }, [tile, el('div', { class: 'cb' }, [el('h3', { text: p.name }), el('span', { class: 'unit', text: p.unit ? 'Por ' + p.unit : '' }), el('span', { class: 'price', text: money(p.price) }), el('div', { class: 'act' }, [act])])]);\n}\nfunction renderGrid() {\n  var g = $('grid'); g.textContent = '';\n  if (!state.loaded && !state.failed) { for (var i = 0; i < 8; i++) { g.appendChild(el('div', { class: 'sk' })); } $('count').textContent = 'Cargando productos...'; return; }\n  if (state.failed) { g.appendChild(el('div', { class: 'err', style: 'grid-column:1/-1' }, [el('p', { text: 'No pudimos cargar los productos. Intenta de nuevo en unos segundos.' }), el('button', { class: 'btn', type: 'button', style: 'max-width:200px', text: 'Reintentar', onclick: load })])); $('count').textContent = ''; return; }\n  var list = visible();\n  $('count').textContent = list.length + (list.length === 1 ? ' producto' : ' productos');\n  if (!list.length) { g.appendChild(el('div', { class: 'empty', style: 'grid-column:1/-1', text: 'No encontramos productos con esa búsqueda.' })); return; }\n  list.forEach(function (p) { g.appendChild(card(p)); });\n}\n\n/* ---------- panel del carrito ---------- */\nfunction openDrawer(step) { if (step) { state.step = step; } $('dr').classList.add('on'); $('ov').classList.add('on'); $('dr').setAttribute('aria-hidden', 'false'); renderDrawer(); }\nfunction closeDrawer() { $('dr').classList.remove('on'); $('ov').classList.remove('on'); $('dr').setAttribute('aria-hidden', 'true'); if (state.step === 'done') { state.step = 'cart'; state.order = null; } }\nfunction stepsBar() { var n = state.step === 'cart' ? 1 : (state.step === 'checkout' ? 2 : 3); var s = $('steps'); s.textContent = ''; for (var i = 1; i <= 3; i++) { s.appendChild(el('i', { class: i <= n ? 'on' : '' })); } }\nfunction renderDrawer() {\n  stepsBar();\n  var db = $('db'), df = $('df'); db.textContent = ''; df.textContent = '';\n  if (state.step === 'cart') { drawCart(db, df); } else if (state.step === 'checkout') { drawCheckout(db, df); } else { drawDone(db, df); }\n}\nfunction drawCart(db, df) {\n  $('drT').textContent = 'Tu carrito';\n  var lines = cartLines();\n  if (!lines.length) {\n    db.appendChild(el('div', { class: 'empty' }, [el('div', { style: 'font-size:3rem', text: '🛒' }), el('p', { text: 'Tu carrito está vacío.' })]));\n    df.appendChild(el('button', { class: 'btn', type: 'button', text: 'Ver productos', onclick: closeDrawer }));\n    return;\n  }\n  lines.forEach(function (l) {\n    db.appendChild(el('div', { class: 'line' }, [\n      el('div', { class: 'mini', style: 'background:' + grad(l.p.category), text: EMOJI[l.p.sku] || '🛒' }),\n      el('div', {}, [el('h4', { text: l.p.name }), el('div', { class: 'sub', text: money(l.p.price) + ' c/u' }),\n        el('div', { class: 'q', style: 'margin-top:6px' }, [\n          el('button', { type: 'button', 'aria-label': 'Quitar uno', text: '−', onclick: function () { setQty(l.p.sku, l.qty - 1); } }),\n          el('span', { text: String(l.qty) }),\n          el('button', { type: 'button', 'aria-label': 'Agregar uno', disabled: l.qty >= l.p.stock, text: '+', onclick: function () { setQty(l.p.sku, l.qty + 1); } })])]),\n      el('div', { class: 'rt' }, [el('b', { text: money(l.total) }), el('button', { class: 'rm', type: 'button', text: 'Quitar', onclick: function () { setQty(l.p.sku, 0); } })])\n    ]));\n  });\n  df.appendChild(el('div', { class: 'tot' }, [el('span', { text: 'Total estimado' }), el('span', { text: money(cartTotal()) })]));\n  df.appendChild(el('div', { class: 'note', text: 'El total final lo confirma el sistema al enviar tu pedido.' }));\n  df.appendChild(el('button', { class: 'btn', type: 'button', text: 'Continuar con el pedido', onclick: function () { state.step = 'checkout'; state.errors = []; renderDrawer(); } }));\n  df.appendChild(el('div', { class: 'step' }, [el('button', { class: 'btn link', type: 'button', text: 'Seguir comprando', onclick: closeDrawer }), el('button', { class: 'btn link', type: 'button', text: 'Vaciar carrito', onclick: function () { state.cart = {}; saveCart(); renderAll(); } })]));\n}\nfunction field(label, key, attrs, area) {\n  var input = el(area ? 'textarea' : 'input', Object.assign({ id: 'f_' + key, name: key, value: state.form[key], rows: area ? 2 : false, oninput: function (e) { state.form[key] = e.target.value; } }, attrs));\n  if (!area) { input.value = state.form[key]; } else { input.textContent = state.form[key]; }\n  return el('label', { for: 'f_' + key }, [label, input]);\n}\nfunction drawCheckout(db, df) {\n  $('drT').textContent = 'Tus datos y el pago';\n  if (state.errors.length) { db.appendChild(el('div', { class: 'errbox', role: 'alert' }, [el('b', { text: 'Revisa esto:' }), el('ul', {}, state.errors.map(function (m) { return el('li', { text: m }); }))])); }\n  var form = el('form', { class: 'f', novalidate: true, autocomplete: 'on', onsubmit: function (e) { e.preventDefault(); submitOrder(); } }, [\n    field('Nombre completo', 'name', { type: 'text', autocomplete: 'name', required: true, maxlength: '80' }),\n    el('div', { class: 'two' }, [field('Teléfono', 'phone', { type: 'tel', autocomplete: 'tel', required: true, placeholder: '809-555-1234', maxlength: '30' }), field('Correo', 'email', { type: 'email', autocomplete: 'email', required: true, placeholder: 'tu@correo.com', maxlength: '120' })]),\n    field('Dirección de entrega', 'address', { type: 'text', autocomplete: 'street-address', required: true, placeholder: 'Calle, número, sector', maxlength: '200' }),\n    field('Ciudad', 'city', { type: 'text', autocomplete: 'address-level2', maxlength: '60' }),\n    el('div', { class: 'hp', 'aria-hidden': 'true' }, [el('label', {}, ['No llenar', el('input', { type: 'text', id: 'f_website', name: 'website', tabindex: '-1', autocomplete: 'off' })])]),\n    el('div', { class: 'pay' }, [el('b', { style: 'font-size:.85rem', text: 'Forma de pago' }),\n      el('label', { class: 'po sel' }, [el('input', { type: 'radio', name: 'pay', checked: true, value: 'cash_on_delivery' }), el('span', {}, [el('b', { text: 'Efectivo contra entrega' }), el('small', { text: 'Pagas cuando recibes tu pedido.' })])]),\n      el('label', { class: 'po dis' }, [el('input', { type: 'radio', name: 'pay', disabled: true }), el('span', {}, [el('b', { text: 'Transferencia bancaria' }), el('small', { text: 'Próximamente' })])]),\n      el('label', { class: 'po dis' }, [el('input', { type: 'radio', name: 'pay', disabled: true }), el('span', {}, [el('b', { text: 'Tarjeta de crédito o débito' }), el('small', { text: 'Próximamente' })])])\n    ]),\n    el('button', { type: 'submit', id: 'submitHidden', style: 'display:none' })\n  ]);\n  db.appendChild(form);\n  var sum = el('div', { class: 'sum' }, cartLines().map(function (l) { return el('div', {}, [el('span', { text: l.qty + ' x ' + l.p.name }), el('span', { text: money(l.total) })]); }));\n  db.appendChild(sum);\n  df.appendChild(el('div', { class: 'tot' }, [el('span', { text: 'Total estimado' }), el('span', { text: money(cartTotal()) })]));\n  df.appendChild(el('button', { class: 'btn', type: 'button', id: 'confirmBtn', disabled: state.busy, text: state.busy ? 'Enviando pedido...' : 'Confirmar pedido', onclick: submitOrder }));\n  df.appendChild(el('button', { class: 'btn link', type: 'button', text: '← Volver al carrito', disabled: state.busy, onclick: function () { state.step = 'cart'; renderDrawer(); } }));\n}\nfunction drawDone(db, df) {\n  $('drT').textContent = 'Pedido confirmado';\n  var o = state.order || {};\n  var lines = (o.lines || []).map(function (l) { return el('div', {}, [el('span', { text: l.qty + ' x ' + l.name }), el('span', { text: money(l.line_total) })]); });\n  var deliv = o.dispatch_status === 'assigned' ? (o.rider_name + ' (' + o.vehicle + ') ya va en camino.') : 'Tu pedido está en espera y saldrá en cuanto haya un repartidor libre.';\n  db.appendChild(el('div', { class: 'okc' }, [\n    el('div', { class: 'ck', text: '✓' }), el('h3', { text: '¡Gracias por tu compra!' }),\n    el('p', { class: 'note', text: 'Pedido ' + o.order_id + ' · Factura ' + (o.invoice_no || 'en proceso') }),\n    el('div', { class: 'sum' }, lines.concat([el('div', { style: 'border-top:1px solid #dfe6e1;margin-top:6px;padding-top:8px;font-weight:800' }, [el('span', { text: 'Total' }), el('span', { text: money(o.total) })])])),\n    el('p', { text: deliv }),\n    el('p', { class: 'note', text: 'Te enviamos la factura a ' + (o.email || 'tu correo') + '. Pagas en efectivo al recibir.' })\n  ]));\n  df.appendChild(el('button', { class: 'btn', type: 'button', text: 'Seguir comprando', onclick: closeDrawer }));\n}\n\n/* ---------- enviar pedido ---------- */\nfunction validate() {\n  var f = state.form, e = [];\n  if (f.name.trim().length < 2) { e.push('Escribe tu nombre.'); }\n  if (f.phone.replace(/[^0-9]/g, '').length < 7) { e.push('Escribe un teléfono válido.'); }\n  if (!/^[^@ ]+@[^@ ]+[.][^@ ]+$/.test(f.email.trim())) { e.push('Escribe un correo válido.'); }\n  if (f.address.trim().length < 5) { e.push('Escribe tu dirección de entrega.'); }\n  if (!cartLines().length) { e.push('Tu carrito está vacío.'); }\n  return e;\n}\nfunction submitOrder() {\n  if (state.busy) { return; }\n  state.errors = validate();\n  if (state.errors.length) { renderDrawer(); $('db').scrollTop = 0; return; }\n  state.busy = true; renderDrawer();\n  var hp = $('f_website');\n  var payload = { customer: { name: state.form.name, phone: state.form.phone, email: state.form.email, address: state.form.address, city: state.form.city }, items: cartLines().map(function (l) { return { sku: l.p.sku, qty: l.qty }; }), payment_method: 'cash_on_delivery', website: hp ? hp.value : '' };\n  fetch(API_ORDER, { method: 'POST', headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' }, body: JSON.stringify(payload) })\n    .then(function (r) { return r.json().then(function (j) { return { status: r.status, body: j }; }); })\n    .then(function (res) {\n      state.busy = false;\n      if (res.body && res.body.ok) {\n        store('dt_cust', state.form);\n        state.order = res.body; state.cart = {}; saveCart(); state.step = 'done'; state.errors = [];\n        load(); renderAll();\n      } else {\n        state.errors = (res.body && res.body.errors && res.body.errors.length) ? res.body.errors : ['No pudimos crear tu pedido. Intenta de nuevo.'];\n        renderDrawer(); $('db').scrollTop = 0;\n      }\n    })\n    .catch(function () {\n      state.busy = false;\n      state.errors = ['No pudimos conectar con el sistema. Revisa tu conexión e intenta de nuevo.'];\n      renderDrawer(); $('db').scrollTop = 0;\n    });\n}\n\n/* ---------- arranque ---------- */\nfunction renderAll() { $('cartN').textContent = String(cartCount()); renderGrid(); if ($('dr').classList.contains('on')) { renderDrawer(); } }\nfunction load() {\n  fetch(API_PRODUCTS, { headers: { 'Accept': 'application/json' } })\n    .then(function (r) { if (!r.ok) { throw new Error('http ' + r.status); } return r.json(); })\n    .then(function (d) {\n      state.products = (d && d.products) || []; state.loaded = true; state.failed = false;\n      Object.keys(state.cart).forEach(function (sku) { var p = prod(sku); if (!p || p.stock <= 0) { delete state.cart[sku]; } else if (state.cart[sku] > p.stock) { state.cart[sku] = p.stock; } });\n      saveCart(); renderChips(); renderAll();\n    })\n    .catch(function () { state.failed = true; state.loaded = false; renderGrid(); });\n}\nstate.cart = store('dt_cart') || {};\nvar saved = store('dt_cust'); if (saved) { Object.keys(state.form).forEach(function (k) { if (saved[k]) { state.form[k] = saved[k]; } }); }\n$('q').addEventListener('input', function (e) { state.q = e.target.value; renderGrid(); });\n$('openCart').addEventListener('click', function () { openDrawer(state.step === 'done' ? 'cart' : state.step); });\n$('closeCart').addEventListener('click', closeDrawer);\n$('ov').addEventListener('click', closeDrawer);\ndocument.addEventListener('keydown', function (e) { if (e.key === 'Escape') { closeDrawer(); } });\nrenderGrid(); $('cartN').textContent = String(cartCount());\nload();\n})();\n</script>\n</body>\n</html>\n",
+        "options": {
+          "responseCode": 200,
+          "responseHeaders": {
+            "entries": [
+              {
+                "name": "Content-Type",
+                "value": "text/html; charset=utf-8"
+              },
+              {
+                "name": "Cache-Control",
+                "value": "no-cache"
+              }
+            ]
+          }
+        }
+      }
+    },
+    {
+      "id": "36bbf467-b030-45d4-9a78-f5be1c4b7f8b",
+      "name": "Products API",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.2,
+      "position": [
+        0,
+        300
+      ],
+      "webhookId": "e9577f0b-de43-4801-9f93-1819ae2d0142",
+      "parameters": {
+        "httpMethod": "GET",
+        "path": "tienda-api/productos",
+        "responseMode": "responseNode",
+        "options": {}
+      }
+    },
+    {
+      "id": "888aa999-38c6-4bc2-85a1-e23908fa7c8e",
+      "name": "Check cache",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        260,
+        300
+      ],
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "language": "javaScript",
+        "jsCode": "const cache = $getWorkflowStaticData('global');\nconst now = Date.now();\nif (cache.products && cache.at && (now - cache.at) < 60000) {\n  return [{ json: { fresh: true, products: cache.products } }];\n}\nreturn [{ json: { fresh: false } }];"
+      },
+      "notes": "Why Code: keeps the product list for 60 seconds in workflow static data so many visitors do not exhaust the Google Sheets read quota (60 per minute)."
+    },
+    {
+      "id": "107bb399-a31b-461d-9760-71136271acb3",
+      "name": "Cache fresh?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.4,
+      "position": [
+        520,
+        300
+      ],
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict"
+          },
+          "conditions": [
+            {
+              "id": "202a505a-b88f-4521-8a45-cc83812d0dfb",
+              "leftValue": "={{ $json.fresh }}",
+              "rightValue": "",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "8a77b8df-7822-4bf2-91eb-081b0ec73035",
+      "name": "Send cached products",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.5,
+      "position": [
+        800,
+        220
+      ],
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ { \"products\": $json.products } }}",
+        "options": {}
+      }
+    },
+    {
+      "id": "1de9ae24-a4fd-4662-80ad-da3f57786946",
+      "name": "Read products",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        800,
+        400
+      ],
+      "alwaysOutputData": true,
+      "retryOnFail": true,
+      "maxTries": 5,
+      "waitBetweenTries": 5000,
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "uVqG7fQd8cxSfaMU",
+          "name": "order to delivery system"
+        }
+      },
+      "parameters": {
+        "resource": "sheet",
+        "operation": "read",
+        "documentId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "1uFc0RmztEiY9tcsNGLe0bExBuhJ5Zxjp6j-J7WfYYjc"
+        },
+        "sheetName": {
+          "__rl": true,
+          "mode": "name",
+          "value": "Products"
+        }
+      }
+    },
+    {
+      "id": "b1b08a3a-ed1b-4696-b387-3607baf19068",
+      "name": "Shape and cache",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1060,
+        400
+      ],
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "language": "javaScript",
+        "jsCode": "const rows = $input.all().map(function (i) { return i.json; }).filter(function (p) { return p.SKU; });\nconst products = rows.map(function (p) {\n  return { sku: String(p.SKU), name: p.Name, category: p.Category, unit: p.Unit, price: Number(p.Price) || 0, stock: Number(p.Stock) || 0 };\n});\nconst cache = $getWorkflowStaticData('global');\ncache.products = products;\ncache.at = Date.now();\nreturn [{ json: { products: products } }];"
+      },
+      "notes": "Why Code: exposes only public fields (no supplier email, no reorder level) and stores the list in the cache."
+    },
+    {
+      "id": "fd8664b7-d3c9-4e57-b69c-0fe20ae5f507",
+      "name": "Send fresh products",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.5,
+      "position": [
+        1320,
+        400
+      ],
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ { \"products\": $json.products } }}",
+        "options": {}
+      }
+    },
+    {
+      "id": "f0a565a6-bbe1-40ac-b9e5-7490817a8676",
+      "name": "Order API",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.2,
+      "position": [
+        0,
+        700
+      ],
+      "webhookId": "6087daa9-10a4-4840-a648-e4ae291d7ee8",
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "tienda-api/pedido",
+        "responseMode": "responseNode",
+        "options": {}
+      }
+    },
+    {
+      "id": "d2bacd11-71c9-49e1-a1c1-62852fdb360f",
+      "name": "Check request",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        260,
+        700
+      ],
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "language": "javaScript",
+        "jsCode": "const b = $json.body || {};\nif (b.website) { return [{ json: { bot: true } }]; }\nreturn [{ json: { bot: false, customer: (b.customer && typeof b.customer === 'object') ? b.customer : {}, items: Array.isArray(b.items) ? b.items : [], payment_method: 'cash_on_delivery', channel: 'Web' } }];"
+      },
+      "notes": "Why Code: drops requests that fill the hidden honeypot field and keeps only the fields the order needs. The payment method is forced to cash on delivery until card and transfer are enabled."
+    },
+    {
+      "id": "1df5ab53-d5de-4095-bf4d-5b656540c76f",
+      "name": "Looks human?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.4,
+      "position": [
+        520,
+        700
+      ],
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict"
+          },
+          "conditions": [
+            {
+              "id": "1fa6f1de-0161-490b-8cef-4142e4b8952e",
+              "leftValue": "={{ !$json.bot }}",
+              "rightValue": "",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "ca6fac0e-6b1c-4639-9fb9-04ca987d7e9f",
+      "name": "Run Create Order",
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1.4,
+      "position": [
+        800,
+        640
+      ],
+      "parameters": {
+        "source": "database",
+        "workflowId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "yVb6OIXeGvPOBYuB",
+          "cachedResultName": "Demo Traders - Create Order"
+        },
+        "mode": "once",
+        "options": {
+          "waitForSubWorkflow": true
+        }
+      }
+    },
+    {
+      "id": "3701edd7-501c-4c0d-8f94-a21111a8123f",
+      "name": "Send order result",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.5,
+      "position": [
+        1060,
+        640
+      ],
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ $json }}",
+        "options": {
+          "responseCode": "={{ $json.ok ? 200 : 422 }}"
+        }
+      }
+    },
+    {
+      "id": "483316b7-e9ff-44bc-8d03-205156bfea27",
+      "name": "Send blocked",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.5,
+      "position": [
+        800,
+        800
+      ],
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ { \"ok\": false, \"errors\": [\"Solicitud no válida.\"] } }}",
+        "options": {
+          "responseCode": 400
+        }
+      }
+    }
+  ],
+  "connections": {
+    "Store page": {
+      "main": [
+        [
+          {
+            "node": "Send store page",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Products API": {
+      "main": [
+        [
+          {
+            "node": "Check cache",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Check cache": {
+      "main": [
+        [
+          {
+            "node": "Cache fresh?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Cache fresh?": {
+      "main": [
+        [
+          {
+            "node": "Send cached products",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Read products",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Read products": {
+      "main": [
+        [
+          {
+            "node": "Shape and cache",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Shape and cache": {
+      "main": [
+        [
+          {
+            "node": "Send fresh products",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Order API": {
+      "main": [
+        [
+          {
+            "node": "Check request",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Check request": {
+      "main": [
+        [
+          {
+            "node": "Looks human?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Looks human?": {
+      "main": [
+        [
+          {
+            "node": "Run Create Order",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Send blocked",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Run Create Order": {
+      "main": [
+        [
+          {
+            "node": "Send order result",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "timezone": "America/Santo_Domingo",
+    "availableInMCP": true
+  },
+  "meta": null,
+  "nodeGroups": [],
+  "versionId": "6421e31e-dc4e-4d0d-aa3e-e10033c89c31",
+  "activeVersionId": "6421e31e-dc4e-4d0d-aa3e-e10033c89c31",
+  "sourceWorkflowId": null,
+  "versionMetadata": {
+    "name": null,
+    "description": null
+  }
+}

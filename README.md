@@ -33,17 +33,28 @@ flowchart LR
 | 6 | **Billing** | No | Siguiente factura (`INV-1001`…), vencimiento a 7 días, correo al cliente. Incluye el formulario "Record payment". |
 | 7 | **Dispatch** | No | Primer repartidor con `Available = Yes`. Si no hay ninguno, el pedido espera y queda en el registro. Incluye el formulario "Mark delivered", que libera al repartidor y asigna el pedido en espera más antiguo. |
 
-Más un flujo auxiliar, **Seed Data**, que carga 50 productos típicos de colmado y 3 repartidores.
+Y tres flujos de apoyo:
+
+| Flujo | IA | Qué hace |
+|---|---|---|
+| **Create Order** | No | Núcleo compartido de pedidos: valida los datos, calcula los precios en código, guarda cliente y pedido y llama a Inventory, Billing y Dispatch. Lo usa la tienda web. |
+| **Storefront** | No | Sirve la tienda web en `/webhook/tienda` y su API (`productos` y `pedido`). Detalles en [docs/tienda.md](docs/tienda.md). |
+| **Seed Data** | No | Carga 50 productos típicos de colmado y 3 repartidores. Se puede repetir sin duplicar filas. |
 
 Todos los flujos escriben en `Activity_Log`.
 
 ## Estructura del repositorio
 
 ```
-workflows/   Exportación JSON de los 8 flujos de n8n
+workflows/   Exportación JSON de los 10 flujos de n8n
+storefront/  Tienda web (index.html) y el script que la empaqueta en n8n
 data/        Productos y repartidores de ejemplo, y estructura de la hoja
-docs/        Instalación, configuración de Google Cloud y lista de pruebas
+docs/        Instalación, Google Cloud, tienda web, hoja de ruta y pruebas
 ```
+
+## Tienda web
+
+Con n8n encendido, la tienda está en `http://localhost:5678/webhook/tienda`: catálogo con 50 productos por categorías, buscador, carrito editable, datos de entrega, forma de pago y pantalla de confirmación. El navegador solo envía códigos y cantidades; **el total lo calcula el servidor**. Más detalles en [docs/tienda.md](docs/tienda.md).
 
 ## Puesta en marcha
 
@@ -53,10 +64,11 @@ docs/        Instalación, configuración de Google Cloud y lista de pruebas
    - Google Sheets OAuth2 y Gmail OAuth2.
    - Anthropic (tu API key).
    - Basic Auth para los formularios del personal.
-4. **Importa** los JSON de `workflows/` en este orden: Inventory, Billing, Dispatch, Support Agent, Order Agent, Front Desk Agent, Manager Agent, Seed Data.
+4. **Importa** los JSON de `workflows/` en este orden: Inventory, Billing, Dispatch, Create Order, Storefront, Support Agent, Order Agent, Front Desk Agent, Manager Agent, Seed Data.
 5. **Reconecta las referencias** (los IDs cambian al importar):
    - En cada nodo de Google Sheets: elige tu hoja y tus credenciales.
-   - En Order Agent: los nodos `Call Inventory`, `Call Billing` y `Call Dispatch`.
+   - En Order Agent y en Create Order: los nodos `Call Inventory`, `Call Billing` y `Call Dispatch`.
+   - En Storefront: el nodo `Run Create Order`.
    - En Front Desk Agent: las herramientas `Order agent` y `Support agent`.
    - En Dispatch: el nodo `Assign waiting order`, que se llama a sí mismo.
 6. **Correos de ejemplo**: cambia `proveedor@example.com` y el correo del dueño en el nodo `Compute report numbers` del Manager Agent.

@@ -22,6 +22,12 @@ Se probó el sistema completo con Google Sheets, Gmail y Claude reales (4 de nov
 | 16 | Conversación completa de 3 mensajes con memoria, hasta el pedido confirmado | Pasa |
 | 17 | Los 7 agentes escriben en `Activity_Log` | Pasa |
 | 18 | Al entregar un pedido, el pedido en espera más antiguo se asigna al repartidor libre | Pasa |
+| 19 | La tienda sirve la página (200) y la API devuelve 50 productos solo con campos públicos | Pasa |
+| 20 | Pedido web con datos y carrito vacíos: se rechaza con 422 y 5 mensajes de error | Pasa |
+| 21 | Pedido web con el campo trampa lleno: se descarta con 400 | Pasa |
+| 22 | Pedido web con un producto inexistente y una cantidad sobre el stock: 422 | Pasa |
+| 23 | Pedido web real: 2 cebollas + 1 sal = RD$ 340, pedido ORD-1006, factura INV-1006, entrega en espera | Pasa |
+| 24 | Capturas de la tienda: catálogo, carrito, validación del pago, confirmación y vista de 500 px | Pasa |
 
 ## Problemas encontrados y corregidos
 
@@ -36,3 +42,5 @@ Se probó el sistema completo con Google Sheets, Gmail y Claude reales (4 de nov
 - El pago parcial (el estado `Partial`): está implementado, pero solo se probó el pago completo y el rechazo.
 - La llegada de los correos a la bandeja: n8n confirmó cada envío, pero no se abrió el buzón.
 - El disparo automático de las 21:00: se ejecutó el flujo a mano, no se esperó a la hora.
+- La tienda en un navegador con una persona real: los clics de las capturas fueron simulados con un script, y la pantalla de confirmación se vio con una respuesta del servidor simulada. El pedido real se probó por la API.
+- La tienda en pantallas de menos de 500 px de ancho (el navegador de pruebas no baja de ese ancho).
