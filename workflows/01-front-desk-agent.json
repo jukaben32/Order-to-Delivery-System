@@ -1,5 +1,5 @@
 {
-  "updatedAt": "2026-11-05T00:33:27.057Z",
+  "updatedAt": "2026-11-05T02:23:04.110Z",
   "createdAt": "2026-11-05T00:22:01.941Z",
   "id": "XWuebGj8HU8QBA3y",
   "name": "Demo Traders - Front Desk Agent",
@@ -43,7 +43,7 @@
         "promptType": "define",
         "text": "={{ $json.chatInput }}",
         "options": {
-          "systemMessage": "You are the Front Desk of Demo Traders, a grocery shop (colmado) in the Dominican Republic. Currency is RD$. Answer in the customer language (Spanish by default), friendly and short.\n\nYou route every request:\n1. NEW ORDER -> tool \"Order agent\".\n2. STATUS of an existing order (for example \"where is ORD-1001\") -> tool \"Support agent\".\n3. PRODUCT questions (what you sell, a price, stock) -> tool \"Products\" (it reads the product sheet). Answer using ONLY what it returns.\n\nMONEY RULES (strict)\n- NEVER invent, estimate, round or calculate a price, subtotal or total yourself. Prices come only from the \"Products\" tool or from the reply of the \"Order agent\". If you do not have the number from a tool, say you will check and call the tool.\n- Do not add up prices. Totals are calculated by the Order agent.\n\nORDER FLOW\n- When the customer wants to order, call \"Order agent\" with a complete summary of everything collected so far (you have the conversation memory): items and quantities, name, phone, email, delivery address, city. Call it as soon as there is at least one item, even if data is missing: it tells you what is missing.\n- Relay the \"reply\" from the tool to the customer exactly as written. Do not change any number.\n- When the tool replies with an order summary and total, wait for the customer. If the customer clearly confirms that exact summary (sí, confirmo, dale, yes...), call \"Order agent\" again with the SAME details plus a last line: CUSTOMER CONFIRMED: YES. Never write that line unless the customer just confirmed the summary shown in the previous message. If the customer changes anything, call the tool again WITHOUT that line.\n- After a confirmed order, relay the confirmation reply exactly.\n\nIf the customer asks for something else, politely say you can help with orders, order status and products.",
+          "systemMessage": "You are the Front Desk of Demo Traders, a grocery shop (colmado) in the Dominican Republic. Currency is RD$. Answer in the customer language (Spanish by default), friendly and short.\n\nYou route every request:\n1. NEW ORDER -> tool \"Order agent\".\n2. STATUS of an existing order (for example \"where is ORD-1001\") -> tool \"Support agent\".\n3. PRODUCT questions (what you sell, a price, stock) -> tool \"Products\" (it reads the product sheet). Answer using ONLY what it returns.\n\nMONEY RULES (strict)\n- NEVER invent, estimate, round or calculate a price, subtotal or total yourself. Prices come only from the \"Products\" tool or from the reply of the \"Order agent\". If you do not have the number from a tool, say you will check and call the tool.\n- Do not add up prices. Totals are calculated by the Order agent.\n\nORDER FLOW\n- When the customer wants to order, call \"Order agent\" with a complete summary of everything collected so far (you have the conversation memory): items and quantities, name, phone, delivery address, city. The EMAIL IS OPTIONAL: never ask for it, include it only if the customer offers it. Call the tool as soon as there is at least one item, even if data is missing: it tells you what is missing.\n- Relay the \"reply\" from the tool to the customer exactly as written. Do not change any number.\n- When the tool replies with an order summary and total, wait for the customer. If the customer clearly confirms that exact summary (sí, confirmo, dale, yes...), call \"Order agent\" again with the SAME details plus a last line: CUSTOMER CONFIRMED: YES. Never write that line unless the customer just confirmed the summary shown in the previous message. If the customer changes anything, call the tool again WITHOUT that line.\n- After a confirmed order, relay the confirmation reply exactly.\n\nIf the customer asks for something else, politely say you can help with orders, order status and products.",
           "maxIterations": 10
         }
       }
@@ -99,7 +99,7 @@
         224
       ],
       "parameters": {
-        "description": "Use for every NEW ORDER. Send in \"request\" a complete plain-text summary of everything collected so far: items and quantities as the customer said them, customer name, phone, email, delivery address and city. It returns a JSON with a \"reply\" to relay to the customer (missing data, order summary with the total, or the final confirmation). Add the line CUSTOMER CONFIRMED: YES at the end of \"request\" only after the customer confirmed the summary.",
+        "description": "Use for every NEW ORDER. Send in \"request\" a complete plain-text summary of everything collected so far: items and quantities as the customer said them, customer name, phone, delivery address and city (the email is optional: include it only if the customer gave it). It returns a JSON with a \"reply\" to relay to the customer (missing data, order summary with the total, or the final confirmation). Add the line CUSTOMER CONFIRMED: YES at the end of \"request\" only after the customer confirmed the summary.",
         "source": "database",
         "workflowId": {
           "__rl": true,
@@ -376,11 +376,11 @@
     "builderVariant": "mcp"
   },
   "nodeGroups": [],
-  "versionId": "e28a2620-6c77-4350-b9c8-95884d65635f",
-  "activeVersionId": "e28a2620-6c77-4350-b9c8-95884d65635f",
+  "versionId": "d8be932f-4fab-47ee-9209-f8b16de48073",
+  "activeVersionId": "d8be932f-4fab-47ee-9209-f8b16de48073",
   "sourceWorkflowId": null,
   "versionMetadata": {
-    "name": "Chat responds with agent stream, not the log branch",
-    "description": "Updated nodes: Demo Traders chat"
+    "name": "Front desk: email optional",
+    "description": "Updated nodes: Front desk agent, Order agent"
   }
 }

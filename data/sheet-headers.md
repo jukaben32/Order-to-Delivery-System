@@ -23,5 +23,7 @@ Crea un Google Sheet con **9 pestañas**. Cada una lleva solo la fila de encabez
 - **Staff.Available**: `Yes` / `No`
 - **Purchase_Requests.Status**: `Requested`
 - **Números**: `INV-1001`, `ORD-1001`, `CUS-1001`, `DSP-1001`, `PAY-1001` (cada flujo calcula el siguiente leyendo la hoja)
+- **Activity_Log.Action** del agente `Notify`: `email_sent` (aviso enviado por correo) y `whatsapp_pending` (cliente sin correo; en `Details` van el evento, el teléfono y el texto listo para enviar por WhatsApp)
+- **Customers.Email** puede quedar vacío: el teléfono es el dato obligatorio
 
 Los datos de ejemplo están en `products.csv` y `staff.csv`. El flujo `Demo Traders - Seed Data` los carga por SKU y por Staff_ID, así que se puede repetir sin duplicar filas (restaura el stock inicial).

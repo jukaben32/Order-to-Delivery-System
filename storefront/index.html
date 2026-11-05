@@ -31,7 +31,17 @@ a{color:var(--g)}
 .hero h1{margin:0 0 4px;font-size:1.6rem;letter-spacing:-.02em}
 .hero p{margin:0;opacity:.92}
 .perks{display:flex;gap:10px;flex-wrap:wrap}
-.perk{background:rgba(255,255,255,.16);border:1px solid rgba(255,255,255,.28);padding:7px 12px;border-radius:999px;font-size:.85rem;font-weight:600}
+.perk{background:rgba(255,255,255,.16);border:1px solid rgba(255,255,255,.28);padding:7px 12px;border-radius:999px;font-size:.85rem;font-weight:600;color:#fff;font-family:inherit;cursor:pointer;transition:background .15s}
+.perk:hover{background:rgba(255,255,255,.3)}
+.perk:focus-visible{outline-color:#fff}
+.ov.inf{z-index:55}
+.modal{position:fixed;left:50%;top:50%;transform:translate(-50%,-46%);width:min(460px,92vw);background:#fff;border-radius:18px;padding:24px 24px 20px;z-index:60;opacity:0;pointer-events:none;transition:opacity .2s,transform .2s;box-shadow:0 24px 60px rgba(10,24,17,.3)}
+.modal.on{opacity:1;pointer-events:auto;transform:translate(-50%,-50%)}
+.modal h3{margin:0 0 4px;font-size:1.25rem}
+.modal .ic2{width:54px;height:54px;border-radius:16px;background:var(--gl);display:grid;place-items:center;font-size:1.7rem;margin-bottom:12px}
+.modal p{margin:8px 0;color:#2c3b33;font-size:.95rem}
+.modal .tag{display:inline-block;font-size:.75rem;font-weight:700;color:var(--am);background:#fff7e6;border:1px solid #fde4b0;border-radius:999px;padding:3px 10px;margin-top:4px}
+.modal .mact{margin-top:16px}
 .wrap{max-width:1180px;margin:0 auto;padding:0 18px 90px}
 .chips{display:flex;gap:8px;overflow-x:auto;padding:16px 0 10px;scrollbar-width:none}
 .chips::-webkit-scrollbar{display:none}
@@ -132,7 +142,7 @@ footer{max-width:1180px;margin:0 auto;padding:0 18px 40px;color:var(--mu);font-s
 
 <section class="hero"><div class="box">
  <div><h1>Tu colmado, en línea</h1><p>Escoge lo que necesitas, arma tu carrito y recibe tu pedido en casa.</p></div>
- <div class="perks"><span class="perk">&#128666; Entrega a domicilio</span><span class="perk">&#128181; Pago contra entrega</span><span class="perk">&#129534; Factura por correo</span></div>
+ <div class="perks"><button class="perk" type="button" data-info="delivery">&#128666; Entrega a domicilio</button><button class="perk" type="button" data-info="payment">&#128181; Pago contra entrega</button><button class="perk" type="button" data-info="whatsapp">&#128172; Avisos por WhatsApp</button></div>
 </div></section>
 
 <main class="wrap">
@@ -149,6 +159,13 @@ footer{max-width:1180px;margin:0 auto;padding:0 18px 40px;color:var(--mu);font-s
  <div class="db" id="db"></div>
  <div class="df" id="df"></div>
 </aside>
+<div class="ov inf" id="ovInfo"></div>
+<div class="modal" id="modal" role="dialog" aria-modal="true" aria-labelledby="mT" aria-hidden="true">
+ <div class="ic2" id="mI" aria-hidden="true"></div>
+ <h3 id="mT"></h3>
+ <div id="mB"></div>
+ <div class="mact"><button class="btn" type="button" id="mClose">Entendido</button></div>
+</div>
 <div class="toast" id="toast" role="status" aria-live="polite"></div>
 
 <script>
@@ -178,6 +195,28 @@ function store(key, val) { try { if (val === undefined) { return JSON.parse(loca
 function toast(msg) { var t = $('toast'); t.textContent = msg; t.classList.add('on'); clearTimeout(toast.t); toast.t = setTimeout(function () { t.classList.remove('on'); }, 2200); }
 function prod(sku) { for (var i = 0; i < state.products.length; i++) { if (state.products[i].sku === sku) { return state.products[i]; } } return null; }
 function grad(cat) { var c = COLORS[cat] || ['#eef3ef', '#dfe9e2']; return 'linear-gradient(135deg,' + c[0] + ',' + c[1] + ')'; }
+
+/* ---------- ventanas de información ---------- */
+var INFO = {
+  delivery: { icon: '🚚', title: 'Entrega a domicilio', body: ['Llevamos tu pedido a la dirección que escribas al comprar.', 'Cuando confirmas, sale un repartidor. Si todos están ocupados, tu pedido queda en espera y sale en cuanto se libere uno.'], tag: 'Zonas de entrega y costo de envío: próximamente' },
+  payment: { icon: '💵', title: 'Pago contra entrega', body: ['Pagas en efectivo cuando recibes tu pedido. No adelantas dinero.', 'Cuando termines de comprar, recibes el número de tu factura.'], tag: 'Transferencia y tarjeta con enlace de pago: próximamente' },
+  whatsapp: { icon: '💬', title: 'Avisos por WhatsApp', body: ['Pensamos esta tienda para WhatsApp: tu factura y los avisos de que tu pedido salió y llegó van al número que escribas, sin necesidad de correo.', 'Si prefieres, deja también tu correo y los recibes ahí.'], tag: 'Estamos terminando de conectar WhatsApp' }
+};
+var lastFocus = null;
+function openInfo(key) {
+  var d = INFO[key]; if (!d) { return; }
+  lastFocus = document.activeElement;
+  $('mI').textContent = d.icon; $('mT').textContent = d.title;
+  var b = $('mB'); b.textContent = '';
+  d.body.forEach(function (t) { b.appendChild(el('p', { text: t })); });
+  if (d.tag) { b.appendChild(el('span', { class: 'tag', text: d.tag })); }
+  $('modal').classList.add('on'); $('ovInfo').classList.add('on'); $('modal').setAttribute('aria-hidden', 'false');
+  $('mClose').focus();
+}
+function closeInfo() {
+  $('modal').classList.remove('on'); $('ovInfo').classList.remove('on'); $('modal').setAttribute('aria-hidden', 'true');
+  if (lastFocus && lastFocus.focus) { lastFocus.focus(); }
+}
 
 /* ---------- carrito ---------- */
 function saveCart() { store('dt_cart', state.cart); }
@@ -279,7 +318,7 @@ function drawCheckout(db, df) {
   if (state.errors.length) { db.appendChild(el('div', { class: 'errbox', role: 'alert' }, [el('b', { text: 'Revisa esto:' }), el('ul', {}, state.errors.map(function (m) { return el('li', { text: m }); }))])); }
   var form = el('form', { class: 'f', novalidate: true, autocomplete: 'on', onsubmit: function (e) { e.preventDefault(); submitOrder(); } }, [
     field('Nombre completo', 'name', { type: 'text', autocomplete: 'name', required: true, maxlength: '80' }),
-    el('div', { class: 'two' }, [field('Teléfono', 'phone', { type: 'tel', autocomplete: 'tel', required: true, placeholder: '809-555-1234', maxlength: '30' }), field('Correo', 'email', { type: 'email', autocomplete: 'email', required: true, placeholder: 'tu@correo.com', maxlength: '120' })]),
+    el('div', { class: 'two' }, [field('Teléfono (WhatsApp)', 'phone', { type: 'tel', autocomplete: 'tel', required: true, placeholder: '809-555-1234', maxlength: '30', inputmode: 'tel' }), field('Correo (opcional)', 'email', { type: 'email', autocomplete: 'email', placeholder: 'tu@correo.com', maxlength: '120' })]),
     field('Dirección de entrega', 'address', { type: 'text', autocomplete: 'street-address', required: true, placeholder: 'Calle, número, sector', maxlength: '200' }),
     field('Ciudad', 'city', { type: 'text', autocomplete: 'address-level2', maxlength: '60' }),
     el('div', { class: 'hp', 'aria-hidden': 'true' }, [el('label', {}, ['No llenar', el('input', { type: 'text', id: 'f_website', name: 'website', tabindex: '-1', autocomplete: 'off' })])]),
@@ -307,7 +346,7 @@ function drawDone(db, df) {
     el('p', { class: 'note', text: 'Pedido ' + o.order_id + ' · Factura ' + (o.invoice_no || 'en proceso') }),
     el('div', { class: 'sum' }, lines.concat([el('div', { style: 'border-top:1px solid #dfe6e1;margin-top:6px;padding-top:8px;font-weight:800' }, [el('span', { text: 'Total' }), el('span', { text: money(o.total) })])])),
     el('p', { text: deliv }),
-    el('p', { class: 'note', text: 'Te enviamos la factura a ' + (o.email || 'tu correo') + '. Pagas en efectivo al recibir.' })
+    el('p', { class: 'note', text: (o.contact_via === 'email' ? 'Te enviamos la factura a ' + o.email + '.' : 'Guarda tu número de pedido. Te avisaremos por WhatsApp al ' + (o.phone || 'número que indicaste') + ' cuando tu pedido salga y llegue.') + ' Pagas en efectivo al recibir.' })
   ]));
   df.appendChild(el('button', { class: 'btn', type: 'button', text: 'Seguir comprando', onclick: closeDrawer }));
 }
@@ -317,7 +356,7 @@ function validate() {
   var f = state.form, e = [];
   if (f.name.trim().length < 2) { e.push('Escribe tu nombre.'); }
   if (f.phone.replace(/[^0-9]/g, '').length < 7) { e.push('Escribe un teléfono válido.'); }
-  if (!/^[^@ ]+@[^@ ]+[.][^@ ]+$/.test(f.email.trim())) { e.push('Escribe un correo válido.'); }
+  if (f.email.trim() && !/^[^@ ]+@[^@ ]+[.][^@ ]+$/.test(f.email.trim())) { e.push('El correo no parece válido. Puedes dejarlo vacío.'); }
   if (f.address.trim().length < 5) { e.push('Escribe tu dirección de entrega.'); }
   if (!cartLines().length) { e.push('Tu carrito está vacío.'); }
   return e;
@@ -367,7 +406,10 @@ $('q').addEventListener('input', function (e) { state.q = e.target.value; render
 $('openCart').addEventListener('click', function () { openDrawer(state.step === 'done' ? 'cart' : state.step); });
 $('closeCart').addEventListener('click', closeDrawer);
 $('ov').addEventListener('click', closeDrawer);
-document.addEventListener('keydown', function (e) { if (e.key === 'Escape') { closeDrawer(); } });
+document.addEventListener('keydown', function (e) { if (e.key === 'Escape') { closeInfo(); closeDrawer(); } });
+Array.prototype.forEach.call(document.querySelectorAll('[data-info]'), function (b) { b.addEventListener('click', function () { openInfo(b.getAttribute('data-info')); }); });
+$('mClose').addEventListener('click', closeInfo);
+$('ovInfo').addEventListener('click', closeInfo);
 renderGrid(); $('cartN').textContent = String(cartCount());
 load();
 })();

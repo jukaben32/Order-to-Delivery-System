@@ -1,5 +1,5 @@
 {
-  "updatedAt": "2026-11-05T01:37:54.845Z",
+  "updatedAt": "2026-11-05T02:22:26.098Z",
   "createdAt": "2026-11-05T01:34:35.836Z",
   "id": "yVb6OIXeGvPOBYuB",
   "name": "Demo Traders - Create Order",
@@ -65,7 +65,7 @@
       "parameters": {
         "mode": "runOnceForAllItems",
         "language": "javaScript",
-        "jsCode": "const input = $('Create order trigger').first().json;\nconst products = $input.all().map(function (i) { return i.json; }).filter(function (p) { return p.SKU; });\nfunction money(n) { return 'RD$ ' + Number(n).toLocaleString('en-US'); }\nconst c = input.customer || {};\nconst customer = {\n  name: String(c.name || '').trim().slice(0, 80),\n  phone: String(c.phone || '').trim().slice(0, 30),\n  email: String(c.email || '').trim().toLowerCase().slice(0, 120),\n  address: String(c.address || '').trim().slice(0, 200),\n  city: String(c.city || '').trim().slice(0, 60)\n};\nconst errors = [];\nif (customer.name.length < 2) { errors.push('Escribe tu nombre.'); }\nif (customer.phone.replace(/\\D/g, '').length < 7) { errors.push('Escribe un teléfono válido.'); }\nif (!/^[^@\\s]+@[^@\\s]+\\.[^@\\s]+$/.test(customer.email)) { errors.push('Escribe un correo válido.'); }\nif (customer.address.length < 5) { errors.push('Escribe tu dirección de entrega.'); }\nconst raw = Array.isArray(input.items) ? input.items : [];\nif (raw.length > 60) { errors.push('El pedido tiene demasiados productos distintos.'); }\nconst merged = {};\nraw.slice(0, 60).forEach(function (it) {\n  const sku = String((it && it.sku) || '').trim();\n  const qty = Math.round(Number(it && it.qty));\n  if (!sku || !(qty > 0)) { return; }\n  merged[sku] = (merged[sku] || 0) + qty;\n});\nconst skus = Object.keys(merged);\nif (!skus.length) { errors.push('Tu carrito está vacío.'); }\nconst items = [];\nlet subtotal = 0;\nskus.forEach(function (sku) {\n  const p = products.find(function (x) { return String(x.SKU) === sku; });\n  const qty = merged[sku];\n  if (!p) { errors.push('El producto ' + sku + ' ya no está disponible.'); return; }\n  if (qty > 99) { errors.push('La cantidad máxima por producto es 99 (' + p.Name + ').'); return; }\n  const stock = Number(p.Stock) || 0;\n  if (qty > stock) { errors.push('No hay suficiente existencia de ' + p.Name + ' (quedan ' + stock + ').'); return; }\n  const price = Number(p.Price) || 0;\n  const lineTotal = price * qty;\n  subtotal += lineTotal;\n  items.push({ sku: sku, qty: qty, name: p.Name, price: price, line_total: lineTotal });\n});\nconst discount = 0;\nconst total = subtotal - discount;\nreturn [{ json: { ok: errors.length === 0, errors: errors, items: items, subtotal: subtotal, discount: discount, total: total, customer: customer, channel: String(input.channel || 'Web').slice(0, 20), payment_method: String(input.payment_method || 'cash_on_delivery').slice(0, 30) } }];"
+        "jsCode": "const input = $('Create order trigger').first().json;\nconst products = $input.all().map(function (i) { return i.json; }).filter(function (p) { return p.SKU; });\nfunction money(n) { return 'RD$ ' + Number(n).toLocaleString('en-US'); }\nconst c = input.customer || {};\nconst customer = {\n  name: String(c.name || '').trim().slice(0, 80),\n  phone: String(c.phone || '').trim().slice(0, 30),\n  email: String(c.email || '').trim().toLowerCase().slice(0, 120),\n  address: String(c.address || '').trim().slice(0, 200),\n  city: String(c.city || '').trim().slice(0, 60)\n};\nconst errors = [];\nif (customer.name.length < 2) { errors.push('Escribe tu nombre.'); }\nif (customer.phone.replace(/\\D/g, '').length < 7) { errors.push('Escribe un teléfono válido (con WhatsApp, si es posible).'); }\nif (customer.email && !/^[^@\\s]+@[^@\\s]+\\.[^@\\s]+$/.test(customer.email)) { errors.push('El correo no parece válido. Puedes dejarlo vacío.'); }\nif (customer.address.length < 5) { errors.push('Escribe tu dirección de entrega.'); }\nconst raw = Array.isArray(input.items) ? input.items : [];\nif (raw.length > 60) { errors.push('El pedido tiene demasiados productos distintos.'); }\nconst merged = {};\nraw.slice(0, 60).forEach(function (it) {\n  const sku = String((it && it.sku) || '').trim();\n  const qty = Math.round(Number(it && it.qty));\n  if (!sku || !(qty > 0)) { return; }\n  merged[sku] = (merged[sku] || 0) + qty;\n});\nconst skus = Object.keys(merged);\nif (!skus.length) { errors.push('Tu carrito está vacío.'); }\nconst items = [];\nlet subtotal = 0;\nskus.forEach(function (sku) {\n  const p = products.find(function (x) { return String(x.SKU) === sku; });\n  const qty = merged[sku];\n  if (!p) { errors.push('El producto ' + sku + ' ya no está disponible.'); return; }\n  if (qty > 99) { errors.push('La cantidad máxima por producto es 99 (' + p.Name + ').'); return; }\n  const stock = Number(p.Stock) || 0;\n  if (qty > stock) { errors.push('No hay suficiente existencia de ' + p.Name + ' (quedan ' + stock + ').'); return; }\n  const price = Number(p.Price) || 0;\n  const lineTotal = price * qty;\n  subtotal += lineTotal;\n  items.push({ sku: sku, qty: qty, name: p.Name, price: price, line_total: lineTotal });\n});\nconst discount = 0;\nconst total = subtotal - discount;\nreturn [{ json: { ok: errors.length === 0, errors: errors, items: items, subtotal: subtotal, discount: discount, total: total, customer: customer, channel: String(input.channel || 'Web').slice(0, 20), payment_method: String(input.payment_method || 'cash_on_delivery').slice(0, 30) } }];"
       },
       "notes": "Why Code: THIS is where money is calculated. The browser only sends SKU + quantity; prices come from the Products sheet. Also validates customer data, SKUs, quantities and stock."
     },
@@ -180,7 +180,7 @@
       "parameters": {
         "mode": "runOnceForAllItems",
         "language": "javaScript",
-        "jsCode": "const p = $('Validate and price').first().json;\nconst customers = $('Read customers').all().map(function (i) { return i.json; }).filter(function (c) { return c.Customer_ID; });\nconst orders = $input.all().map(function (i) { return i.json; }).filter(function (o) { return o.Order_ID; });\nfunction digits(s) { return String(s || '').replace(/\\D/g, ''); }\nconst existing = customers.find(function (c) { return (digits(c.Phone) && digits(c.Phone) === digits(p.customer.phone)) || (String(c.Email || '').toLowerCase() === p.customer.email); });\nlet maxC = 1000;\ncustomers.forEach(function (c) { const m = String(c.Customer_ID).match(/^CUS-(\\d+)$/); if (m && Number(m[1]) > maxC) { maxC = Number(m[1]); } });\nlet maxO = 1000;\norders.forEach(function (o) { const m = String(o.Order_ID).match(/^ORD-(\\d+)$/); if (m && Number(m[1]) > maxO) { maxO = Number(m[1]); } });\nconst customerId = existing ? existing.Customer_ID : 'CUS-' + (maxC + 1);\nconst orderId = 'ORD-' + (maxO + 1);\nconst itemsText = p.items.map(function (i) { return i.sku + ' x' + i.qty; }).join('; ');\nreturn [{ json: { order_id: orderId, customer_id: customerId, date: $now.toFormat('yyyy-MM-dd'), items_text: itemsText, customer_row: { Customer_ID: customerId, Name: p.customer.name, Phone: p.customer.phone, Email: p.customer.email, Address: p.customer.address, City: p.customer.city, Created_At: existing && existing.Created_At ? existing.Created_At : $now.toFormat('yyyy-MM-dd HH:mm:ss') } } }];"
+        "jsCode": "const p = $('Validate and price').first().json;\nconst customers = $('Read customers').all().map(function (i) { return i.json; }).filter(function (c) { return c.Customer_ID; });\nconst orders = $input.all().map(function (i) { return i.json; }).filter(function (o) { return o.Order_ID; });\nfunction digits(s) { return String(s || '').replace(/\\D/g, ''); }\nconst existing = customers.find(function (c) { return (digits(c.Phone) && digits(c.Phone) === digits(p.customer.phone)) || (p.customer.email && String(c.Email || '').toLowerCase() === p.customer.email); });\nlet maxC = 1000;\ncustomers.forEach(function (c) { const m = String(c.Customer_ID).match(/^CUS-(\\d+)$/); if (m && Number(m[1]) > maxC) { maxC = Number(m[1]); } });\nlet maxO = 1000;\norders.forEach(function (o) { const m = String(o.Order_ID).match(/^ORD-(\\d+)$/); if (m && Number(m[1]) > maxO) { maxO = Number(m[1]); } });\nconst customerId = existing ? existing.Customer_ID : 'CUS-' + (maxC + 1);\nconst orderId = 'ORD-' + (maxO + 1);\nconst itemsText = p.items.map(function (i) { return i.sku + ' x' + i.qty; }).join('; ');\nreturn [{ json: { order_id: orderId, customer_id: customerId, date: $now.toFormat('yyyy-MM-dd'), items_text: itemsText, customer_row: { Customer_ID: customerId, Name: p.customer.name, Phone: p.customer.phone, Email: p.customer.email, Address: p.customer.address, City: p.customer.city, Created_At: existing && existing.Created_At ? existing.Created_At : $now.toFormat('yyyy-MM-dd HH:mm:ss') } } }];"
       },
       "notes": "Why Code: reuses the Customer_ID when the phone or email already exists, otherwise makes the next CUS number; makes the next ORD number (first is ORD-1001). Ignores the empty placeholder row."
     },
@@ -632,6 +632,12 @@
               "name": "customer_email",
               "value": "={{ $(\"Validate and price\").first().json.customer.email }}",
               "type": "string"
+            },
+            {
+              "id": "b6",
+              "name": "customer_phone",
+              "value": "={{ $(\"Validate and price\").first().json.customer.phone }}",
+              "type": "string"
             }
           ]
         },
@@ -694,6 +700,12 @@
               "type": "string"
             },
             {
+              "id": "p5",
+              "name": "customer_phone",
+              "value": "={{ $(\"Validate and price\").first().json.customer.phone }}",
+              "type": "string"
+            },
+            {
               "id": "p4",
               "name": "address",
               "value": "={{ $(\"Validate and price\").first().json.customer.address }}",
@@ -740,7 +752,7 @@
       "parameters": {
         "mode": "runOnceForAllItems",
         "language": "javaScript",
-        "jsCode": "const p = $('Validate and price').first().json;\nconst a = $('Assign IDs').first().json;\nconst inv = $('Call Billing').first().json;\nconst dsp = $('Call Dispatch').first().json;\nreturn [{ json: { ok: true, order_id: a.order_id, total: p.total, invoice_no: inv.invoice_no || '', due_date: inv.due_date || '', dispatch_status: dsp.dispatch_status || '', rider_name: dsp.rider_name || '', vehicle: dsp.vehicle || '', email: p.customer.email, payment_method: p.payment_method, lines: p.items.map(function (i) { return { name: i.name, qty: i.qty, line_total: i.line_total }; }) } }];"
+        "jsCode": "const p = $('Validate and price').first().json;\nconst a = $('Assign IDs').first().json;\nconst inv = $('Call Billing').first().json;\nconst dsp = $('Call Dispatch').first().json;\nreturn [{ json: { ok: true, order_id: a.order_id, total: p.total, invoice_no: inv.invoice_no || '', due_date: inv.due_date || '', dispatch_status: dsp.dispatch_status || '', rider_name: dsp.rider_name || '', vehicle: dsp.vehicle || '', email: p.customer.email, phone: p.customer.phone, contact_via: p.customer.email ? 'email' : 'whatsapp', payment_method: p.payment_method, lines: p.items.map(function (i) { return { name: i.name, qty: i.qty, line_total: i.line_total }; }) } }];"
       },
       "notes": "Why Code: assembles the final answer from real results (order, invoice, rider). Amounts come from Validate and price."
     },
@@ -1074,11 +1086,11 @@
     "builderVariant": "mcp"
   },
   "nodeGroups": [],
-  "versionId": "96229fde-4898-4066-8288-a48fedf22101",
-  "activeVersionId": "96229fde-4898-4066-8288-a48fedf22101",
+  "versionId": "404f5027-fd15-4924-b256-3dfc7d93b6ed",
+  "activeVersionId": "404f5027-fd15-4924-b256-3dfc7d93b6ed",
   "sourceWorkflowId": null,
   "versionMetadata": {
-    "name": "Create Order: shared core for web and chat orders",
-    "description": "Created with 19 nodes: Create order trigger, Read catalog, Validate and price, Order valid?, Read customers and 14 more"
+    "name": "Create Order: email optional, phone required, WhatsApp-ready result",
+    "description": "Updated nodes: Validate and price, Assign IDs, Payload for Billing, Payload for Dispatch, Build result"
   }
 }

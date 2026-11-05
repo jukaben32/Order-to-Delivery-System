@@ -30,13 +30,14 @@ flowchart LR
 | 3 | **Support Agent** | Sí | Responde "¿dónde está ORD-xxxx?" con herramientas de solo lectura sobre `Orders` y `Dispatch`. |
 | 4 | **Manager Agent** | Sí | Informe a las 21:00 y formulario "Send report now". Un Code calcula ventas, stock bajo, facturas sin pagar y entregas tardías; la IA solo redacta el correo. |
 | 5 | **Inventory** | No | Resta stock con Update Row por SKU. Si baja del mínimo, crea una fila en `Purchase_Requests` (4 × `Reorder_Level`) y escribe al proveedor. |
-| 6 | **Billing** | No | Siguiente factura (`INV-1001`…), vencimiento a 7 días, correo al cliente. Incluye el formulario "Record payment". |
+| 6 | **Billing** | No | Siguiente factura (`INV-1001`…), vencimiento a 7 días y aviso al cliente por correo o WhatsApp. Incluye el formulario "Record payment". |
 | 7 | **Dispatch** | No | Primer repartidor con `Available = Yes`. Si no hay ninguno, el pedido espera y queda en el registro. Incluye el formulario "Mark delivered", que libera al repartidor y asigna el pedido en espera más antiguo. |
 
-Y tres flujos de apoyo:
+Y cuatro flujos de apoyo:
 
 | Flujo | IA | Qué hace |
 |---|---|---|
+| **Notify Customer** | No | Único punto de salida de los avisos al cliente (factura, "en camino", "entregado"). Manda correo si el cliente dejó uno; si no, guarda el mensaje como `whatsapp_pending` en `Activity_Log`, con el teléfono y el texto listos para enviar por WhatsApp. |
 | **Create Order** | No | Núcleo compartido de pedidos: valida los datos, calcula los precios en código, guarda cliente y pedido y llama a Inventory, Billing y Dispatch. Lo usa la tienda web. |
 | **Storefront** | No | Sirve la tienda web en `/webhook/tienda` y su API (`productos` y `pedido`). Detalles en [docs/tienda.md](docs/tienda.md). |
 | **Seed Data** | No | Carga 50 productos típicos de colmado y 3 repartidores. Se puede repetir sin duplicar filas. |
@@ -46,7 +47,7 @@ Todos los flujos escriben en `Activity_Log`.
 ## Estructura del repositorio
 
 ```
-workflows/   Exportación JSON de los 10 flujos de n8n
+workflows/   Exportación JSON de los 11 flujos de n8n
 storefront/  Tienda web (index.html) y el script que la empaqueta en n8n
 data/        Productos y repartidores de ejemplo, y estructura de la hoja
 docs/        Instalación, Google Cloud, tienda web, hoja de ruta y pruebas
@@ -64,10 +65,11 @@ Con n8n encendido, la tienda está en `http://localhost:5678/webhook/tienda`: ca
    - Google Sheets OAuth2 y Gmail OAuth2.
    - Anthropic (tu API key).
    - Basic Auth para los formularios del personal.
-4. **Importa** los JSON de `workflows/` en este orden: Inventory, Billing, Dispatch, Create Order, Storefront, Support Agent, Order Agent, Front Desk Agent, Manager Agent, Seed Data.
+4. **Importa** los JSON de `workflows/` en este orden: Notify Customer, Inventory, Billing, Dispatch, Create Order, Storefront, Support Agent, Order Agent, Front Desk Agent, Manager Agent, Seed Data.
 5. **Reconecta las referencias** (los IDs cambian al importar):
    - En cada nodo de Google Sheets: elige tu hoja y tus credenciales.
    - En Order Agent y en Create Order: los nodos `Call Inventory`, `Call Billing` y `Call Dispatch`.
+   - En Billing y Dispatch: los nodos `Notify invoice`, `Notify on the way` y `Notify delivered`.
    - En Storefront: el nodo `Run Create Order`.
    - En Front Desk Agent: las herramientas `Order agent` y `Support agent`.
    - En Dispatch: el nodo `Assign waiting order`, que se llama a sí mismo.
@@ -92,7 +94,7 @@ Para usarlos desde el móvil, n8n debe ser accesible desde internet (túnel o se
 - **Cuota de Google Sheets**: 60 lecturas por minuto. Un pedido gasta unas 25, por eso los nodos de Sheets tienen reintentos. Para más volumen, pasa los datos a una base de datos real.
 - **Pedidos simultáneos**: dos pedidos en el mismo segundo pueden chocar en el número, porque Sheets no tiene transacciones.
 - **Google en modo Prueba**: los tokens caducan cada 7 días. Para publicar la app Google exige un dominio propio con página principal y política de privacidad.
-- **WhatsApp**: el chat es el hosted chat de n8n. El siguiente paso es conectarlo a WhatsApp (Evolution API, o la API oficial de Meta para producción).
+- **WhatsApp todavía no está conectado.** El correo es opcional y el teléfono es el dato obligatorio, pensando en clientes que no usan correo. Mientras no haya WhatsApp, los avisos de un cliente sin correo quedan como `whatsapp_pending` en `Activity_Log`; nadie los recibe hasta que se conecte Evolution API (pruebas) o la API oficial de Meta (producción) en el flujo Notify Customer.
 - **Cadena sin transacciones**: si un paso falla a mitad de un pedido (por ejemplo, Dispatch), el pedido queda facturado sin repartidor. El informe del dueño no lo marca todavía.
 
 ## Seguridad

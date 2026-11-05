@@ -1,5 +1,5 @@
 {
-  "updatedAt": "2026-11-05T00:34:06.168Z",
+  "updatedAt": "2026-11-05T02:22:05.964Z",
   "createdAt": "2026-11-05T00:18:49.149Z",
   "id": "NfjlqnvpnWFX7lYa",
   "name": "Demo Traders - Dispatch",
@@ -65,7 +65,7 @@
       "parameters": {
         "mode": "runOnceForAllItems",
         "language": "javaScript",
-        "jsCode": "const p = $('Dispatch trigger').first().json;\nconst riders = $input.all().map(function (i) { return i.json; });\nconst r = riders.find(function (x) { return String(x.Available || '').trim().toLowerCase() === 'yes' && String(x.Role || 'Rider').trim().toLowerCase() === 'rider'; });\nconst base = { order_id: p.order_id, customer_name: p.customer_name, customer_email: p.customer_email, address: p.address };\nif (!r) { return [{ json: Object.assign({ found: false }, base) }]; }\nreturn [{ json: Object.assign({ found: true, Staff_ID: r.Staff_ID, rider_name: r.Name, vehicle: r.Vehicle, rider_phone: r.Phone }, base) }];"
+        "jsCode": "const p = $('Dispatch trigger').first().json;\nconst riders = $input.all().map(function (i) { return i.json; });\nconst r = riders.find(function (x) { return String(x.Available || '').trim().toLowerCase() === 'yes' && String(x.Role || 'Rider').trim().toLowerCase() === 'rider'; });\nconst base = { order_id: p.order_id, customer_name: p.customer_name, customer_email: p.customer_email || '', customer_phone: p.customer_phone || '', address: p.address };\nif (!r) { return [{ json: Object.assign({ found: false }, base) }]; }\nreturn [{ json: Object.assign({ found: true, Staff_ID: r.Staff_ID, rider_name: r.Name, vehicle: r.Vehicle, rider_phone: r.Phone }, base) }];"
       },
       "notes": "Why Code: picks the first rider whose Available = Yes. Always returns exactly one item (found true/false) so the IF below has a clear answer even when nobody is free."
     },
@@ -393,34 +393,6 @@
       "retryOnFail": true,
       "maxTries": 5,
       "waitBetweenTries": 5000
-    },
-    {
-      "id": "fecbb5f7-dd09-4a39-b3a6-b9cc3e9c0b6f",
-      "name": "Email customer on the way",
-      "type": "n8n-nodes-base.gmail",
-      "typeVersion": 2.2,
-      "position": [
-        2016,
-        0
-      ],
-      "parameters": {
-        "resource": "message",
-        "operation": "send",
-        "sendTo": "={{ $(\"Pick first free rider\").first().json.customer_email }}",
-        "subject": "=Your order {{ $(\"Pick first free rider\").first().json.order_id }} is on the way",
-        "emailType": "text",
-        "message": "=Hello {{ $(\"Pick first free rider\").first().json.customer_name }},\n\nGood news: your order {{ $(\"Pick first free rider\").first().json.order_id }} is on its way.\n\nRider: {{ $(\"Pick first free rider\").first().json.rider_name }} ({{ $(\"Pick first free rider\").first().json.vehicle }})\nDelivery address: {{ $(\"Pick first free rider\").first().json.address }}\n\nThank you,\nDemo Traders",
-        "options": {
-          "appendAttribution": false
-        }
-      },
-      "credentials": {
-        "gmailOAuth2": {
-          "id": "oOJ0vvQfmwr3MpT0",
-          "name": "Demo Traders Gmail"
-        }
-      },
-      "webhookId": "3156d280-94de-469e-9bf5-620e8c2d5fa3"
     },
     {
       "id": "2d783756-7aea-49dd-890f-575f335d361a",
@@ -946,7 +918,7 @@
       "parameters": {
         "mode": "runOnceForAllItems",
         "language": "javaScript",
-        "jsCode": "const form = $('Mark delivered form').first().json;\nconst wanted = String(form.Order_ID || '').trim().toUpperCase();\nconst rows = function (name) { return $(name).all().map(function (i) { return i.json; }); };\nconst d = rows('Read dispatch for delivery').find(function (r) { return String(r.Order_ID || '').toUpperCase() === wanted && String(r.Status) === 'Dispatched'; });\nif (!d) { return [{ json: { ok: false, Order_ID: wanted, message: 'No open delivery was found for ' + wanted + '. Nothing was changed.' } }]; }\nconst staff = rows('Read staff for delivery').find(function (r) { return String(r.Name) === String(d.Rider); });\nconst order = rows('Read orders for delivery').find(function (r) { return String(r.Order_ID) === String(d.Order_ID); });\nconst cust = order ? rows('Read customers for delivery').find(function (r) { return String(r.Customer_ID) === String(order.Customer_ID); }) : null;\nreturn [{ json: { ok: true, Order_ID: d.Order_ID, Dispatch_ID: d.Dispatch_ID, rider_name: d.Rider, Staff_ID: staff ? staff.Staff_ID : '', customer_name: cust ? cust.Name : '', customer_email: cust ? cust.Email : '', delivered_at: $now.toFormat('yyyy-MM-dd HH:mm:ss'), message: 'Order ' + d.Order_ID + ' marked as delivered. ' + d.Rider + ' is available again.' } }];"
+        "jsCode": "const form = $('Mark delivered form').first().json;\nconst wanted = String(form.Order_ID || '').trim().toUpperCase();\nconst rows = function (name) { return $(name).all().map(function (i) { return i.json; }); };\nconst d = rows('Read dispatch for delivery').find(function (r) { return String(r.Order_ID || '').toUpperCase() === wanted && String(r.Status) === 'Dispatched'; });\nif (!d) { return [{ json: { ok: false, Order_ID: wanted, message: 'No open delivery was found for ' + wanted + '. Nothing was changed.' } }]; }\nconst staff = rows('Read staff for delivery').find(function (r) { return String(r.Name) === String(d.Rider); });\nconst order = rows('Read orders for delivery').find(function (r) { return String(r.Order_ID) === String(d.Order_ID); });\nconst cust = order ? rows('Read customers for delivery').find(function (r) { return String(r.Customer_ID) === String(order.Customer_ID); }) : null;\nreturn [{ json: { ok: true, Order_ID: d.Order_ID, Dispatch_ID: d.Dispatch_ID, rider_name: d.Rider, Staff_ID: staff ? staff.Staff_ID : '', customer_name: cust ? cust.Name : '', customer_email: cust ? String(cust.Email || '') : '', customer_phone: cust ? String(cust.Phone || '') : '', delivered_at: $now.toFormat('yyyy-MM-dd HH:mm:ss'), message: 'Order ' + d.Order_ID + ' marked as delivered. ' + d.Rider + ' is available again.' } }];"
       },
       "notes": "Why Code: joins four sheets (Dispatch, Staff, Orders, Customers) to find the open delivery for the typed order, the rider to free and the customer to email."
     },
@@ -1189,34 +1161,6 @@
       "waitBetweenTries": 5000
     },
     {
-      "id": "dce7f597-eb6d-4a9c-9c34-8aafae4fbc47",
-      "name": "Email customer delivered",
-      "type": "n8n-nodes-base.gmail",
-      "typeVersion": 2.2,
-      "position": [
-        2240,
-        416
-      ],
-      "parameters": {
-        "resource": "message",
-        "operation": "send",
-        "sendTo": "={{ $(\"Find delivery\").first().json.customer_email }}",
-        "subject": "=Your order {{ $(\"Find delivery\").first().json.Order_ID }} was delivered",
-        "emailType": "text",
-        "message": "=Hello {{ $(\"Find delivery\").first().json.customer_name }},\n\nYour order {{ $(\"Find delivery\").first().json.Order_ID }} has been delivered. Thank you for shopping with Demo Traders!\n\nIf anything is wrong, just reply to this email.\n\nDemo Traders",
-        "options": {
-          "appendAttribution": false
-        }
-      },
-      "credentials": {
-        "gmailOAuth2": {
-          "id": "oOJ0vvQfmwr3MpT0",
-          "name": "Demo Traders Gmail"
-        }
-      },
-      "webhookId": "8f763dc9-46f7-4bbf-ade4-ccb34329261c"
-    },
-    {
       "id": "76614da3-ddf1-4287-b02b-8469d5a7ea51",
       "name": "Log delivery",
       "type": "n8n-nodes-base.googleSheets",
@@ -1454,7 +1398,7 @@
       "parameters": {
         "mode": "runOnceForAllItems",
         "language": "javaScript",
-        "jsCode": "const orders = $('Read orders for delivery').all().map(function (i) { return i.json; }).filter(function (o) { return o.Order_ID && String(o.Status) === 'Waiting for rider'; });\norders.sort(function (a, b) { return Number(String(a.Order_ID).replace(/\\D/g, '')) - Number(String(b.Order_ID).replace(/\\D/g, '')); });\nconst o = orders[0];\nif (!o) { return [{ json: { found: false } }]; }\nconst c = $('Read customers for delivery').all().map(function (i) { return i.json; }).find(function (x) { return String(x.Customer_ID) === String(o.Customer_ID); }) || {};\nreturn [{ json: { found: true, order_id: o.Order_ID, customer_name: c.Name || '', customer_email: c.Email || '', address: c.Address || '' } }];"
+        "jsCode": "const orders = $('Read orders for delivery').all().map(function (i) { return i.json; }).filter(function (o) { return o.Order_ID && String(o.Status) === 'Waiting for rider'; });\norders.sort(function (a, b) { return Number(String(a.Order_ID).replace(/\\D/g, '')) - Number(String(b.Order_ID).replace(/\\D/g, '')); });\nconst o = orders[0];\nif (!o) { return [{ json: { found: false } }]; }\nconst c = $('Read customers for delivery').all().map(function (i) { return i.json; }).find(function (x) { return String(x.Customer_ID) === String(o.Customer_ID); }) || {};\nreturn [{ json: { found: true, order_id: o.Order_ID, customer_name: c.Name || '', customer_email: c.Email || '', customer_phone: c.Phone || '', address: c.Address || '' } }];"
       },
       "notes": "Why Code: finds the oldest order still waiting for a rider (lowest ORD number) and the customer data needed to dispatch it. Always returns one item so the IF below has an answer."
     },
@@ -1513,6 +1457,212 @@
         }
       },
       "alwaysOutputData": true
+    },
+    {
+      "id": "efeca7f1-2cde-4d44-97a2-b06668fb1f49",
+      "name": "Notify on the way",
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1.4,
+      "position": [
+        2000,
+        100
+      ],
+      "parameters": {
+        "source": "database",
+        "workflowId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "9q6k5zJyOyu8LfKa",
+          "cachedResultName": "Demo Traders - Notify Customer"
+        },
+        "workflowInputs": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "order_id": "={{ $(\"Pick first free rider\").first().json.order_id }}",
+            "event": "on_the_way",
+            "customer_name": "={{ $(\"Pick first free rider\").first().json.customer_name }}",
+            "customer_email": "={{ $(\"Pick first free rider\").first().json.customer_email }}",
+            "customer_phone": "={{ $(\"Pick first free rider\").first().json.customer_phone }}",
+            "subject": "=Tu pedido {{ $(\"Pick first free rider\").first().json.order_id }} va en camino",
+            "message": "=Hola {{ $(\"Pick first free rider\").first().json.customer_name }}, tu pedido {{ $(\"Pick first free rider\").first().json.order_id }} ya va en camino con {{ $(\"Pick first free rider\").first().json.rider_name }} ({{ $(\"Pick first free rider\").first().json.vehicle }}).\n\nDirección de entrega: {{ $(\"Pick first free rider\").first().json.address }}\n\nDemo Traders"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "order_id",
+              "displayName": "order_id",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": false,
+              "type": "string"
+            },
+            {
+              "id": "event",
+              "displayName": "event",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": false,
+              "type": "string"
+            },
+            {
+              "id": "customer_name",
+              "displayName": "customer_name",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": false,
+              "type": "string"
+            },
+            {
+              "id": "customer_email",
+              "displayName": "customer_email",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": false,
+              "type": "string"
+            },
+            {
+              "id": "customer_phone",
+              "displayName": "customer_phone",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": false,
+              "type": "string"
+            },
+            {
+              "id": "subject",
+              "displayName": "subject",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": false,
+              "type": "string"
+            },
+            {
+              "id": "message",
+              "displayName": "message",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": false,
+              "type": "string"
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "mode": "once",
+        "options": {
+          "waitForSubWorkflow": true
+        }
+      }
+    },
+    {
+      "id": "5e8ee521-ba8a-4e0b-96cd-438adeaf12b8",
+      "name": "Notify delivered",
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1.4,
+      "position": [
+        2700,
+        600
+      ],
+      "parameters": {
+        "source": "database",
+        "workflowId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "9q6k5zJyOyu8LfKa",
+          "cachedResultName": "Demo Traders - Notify Customer"
+        },
+        "workflowInputs": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "order_id": "={{ $(\"Find delivery\").first().json.Order_ID }}",
+            "event": "delivered",
+            "customer_name": "={{ $(\"Find delivery\").first().json.customer_name }}",
+            "customer_email": "={{ $(\"Find delivery\").first().json.customer_email }}",
+            "customer_phone": "={{ $(\"Find delivery\").first().json.customer_phone }}",
+            "subject": "=Tu pedido {{ $(\"Find delivery\").first().json.Order_ID }} fue entregado",
+            "message": "=Hola {{ $(\"Find delivery\").first().json.customer_name }}, tu pedido {{ $(\"Find delivery\").first().json.Order_ID }} fue entregado. ¡Gracias por comprar en Demo Traders!\n\nSi algo no está bien, responde este mensaje.\n\nDemo Traders"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "order_id",
+              "displayName": "order_id",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": false,
+              "type": "string"
+            },
+            {
+              "id": "event",
+              "displayName": "event",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": false,
+              "type": "string"
+            },
+            {
+              "id": "customer_name",
+              "displayName": "customer_name",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": false,
+              "type": "string"
+            },
+            {
+              "id": "customer_email",
+              "displayName": "customer_email",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": false,
+              "type": "string"
+            },
+            {
+              "id": "customer_phone",
+              "displayName": "customer_phone",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": false,
+              "type": "string"
+            },
+            {
+              "id": "subject",
+              "displayName": "subject",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": false,
+              "type": "string"
+            },
+            {
+              "id": "message",
+              "displayName": "message",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": false,
+              "type": "string"
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "mode": "once",
+        "options": {
+          "waitForSubWorkflow": true
+        }
+      }
     }
   ],
   "connections": {
@@ -1605,28 +1755,6 @@
         [
           {
             "node": "Mark order dispatched",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Mark order dispatched": {
-      "main": [
-        [
-          {
-            "node": "Email customer on the way",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Email customer on the way": {
-      "main": [
-        [
-          {
-            "node": "Log dispatch",
             "type": "main",
             "index": 0
           }
@@ -1772,28 +1900,6 @@
         ]
       ]
     },
-    "Set rider available": {
-      "main": [
-        [
-          {
-            "node": "Email customer delivered",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Email customer delivered": {
-      "main": [
-        [
-          {
-            "node": "Log delivery",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
     "Log rejected delivery": {
       "main": [
         [
@@ -1855,6 +1961,50 @@
           }
         ]
       ]
+    },
+    "Mark order dispatched": {
+      "main": [
+        [
+          {
+            "node": "Notify on the way",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Notify on the way": {
+      "main": [
+        [
+          {
+            "node": "Log dispatch",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Set rider available": {
+      "main": [
+        [
+          {
+            "node": "Notify delivered",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Notify delivered": {
+      "main": [
+        [
+          {
+            "node": "Log delivery",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
     }
   },
   "settings": {
@@ -1867,11 +2017,11 @@
     "builderVariant": "mcp"
   },
   "nodeGroups": [],
-  "versionId": "a595935f-9169-44cc-9532-484a7211c873",
-  "activeVersionId": "a595935f-9169-44cc-9532-484a7211c873",
+  "versionId": "bb5bfa59-d881-4b6c-af15-0e567eeb36e0",
+  "activeVersionId": "bb5bfa59-d881-4b6c-af15-0e567eeb36e0",
   "sourceWorkflowId": null,
   "versionMetadata": {
-    "name": "Dispatch waiting order when a rider is freed",
-    "description": "Added nodes: Find waiting order, Order waiting?, Assign waiting order\nConnections: 5 added, 1 removed"
+    "name": "Dispatch: notify via Notify Customer, email optional, Spanish text",
+    "description": "Added nodes: Notify on the way, Notify delivered\nRemoved nodes: Email customer on the way, Email customer delivered\nUpdated nodes: Pick first free rider, Find delivery, Find waiting order\nConnections: 4 added, 4 removed"
   }
 }

@@ -28,6 +28,12 @@ Se probó el sistema completo con Google Sheets, Gmail y Claude reales (4 de nov
 | 22 | Pedido web con un producto inexistente y una cantidad sobre el stock: 422 | Pasa |
 | 23 | Pedido web real: 2 cebollas + 1 sal = RD$ 340, pedido ORD-1006, factura INV-1006, entrega en espera | Pasa |
 | 24 | Capturas de la tienda: catálogo, carrito, validación del pago, confirmación y vista de 500 px | Pasa |
+| 25 | Pedido web **sin correo** de un cliente nuevo: ORD-1008 por RD$ 320, factura INV-1008, `contact_via: whatsapp` | Pasa |
+| 26 | El aviso de la factura sin correo no intenta enviar correo y queda como `whatsapp_pending` con el teléfono y el texto | Pasa |
+| 27 | Cliente con correo: el aviso de "entregado" (ORD-1003) y el de "en camino" (ORD-1006) llegan por Gmail, en español | Pasa |
+| 28 | Chat sin dar correo: el agente no lo pide, muestra el resumen (RD$ 1,435) y confirma el pedido ORD-1009 | Pasa |
+| 29 | Correo con formato inválido en la tienda: error claro y "puedes dejarlo vacío" | Pasa |
+| 30 | Los tres botones de la cabecera abren su ventana de información (captura de WhatsApp y entrega) | Pasa |
 
 ## Problemas encontrados y corregidos
 
@@ -41,6 +47,8 @@ Se probó el sistema completo con Google Sheets, Gmail y Claude reales (4 de nov
 
 - El pago parcial (el estado `Partial`): está implementado, pero solo se probó el pago completo y el rechazo.
 - La llegada de los correos a la bandeja: n8n confirmó cada envío, pero no se abrió el buzón.
+- El envío real por WhatsApp: no existe todavía. Solo se comprobó que el aviso queda guardado como `whatsapp_pending`.
+- El aviso "en camino" sin correo (solo se probó con correo y el de la factura sin correo).
 - El disparo automático de las 21:00: se ejecutó el flujo a mano, no se esperó a la hora.
 - La tienda en un navegador con una persona real: los clics de las capturas fueron simulados con un script, y la pantalla de confirmación se vio con una respuesta del servidor simulada. El pedido real se probó por la API.
 - La tienda en pantallas de menos de 500 px de ancho (el navegador de pruebas no baja de ese ancho).

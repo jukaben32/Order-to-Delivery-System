@@ -14,8 +14,9 @@ Una página de compra servida por n8n, sin servidor adicional. Es un primer conc
 
 - Catálogo de 50 productos con categorías, buscador y avisos de "Agotado" y "Quedan N".
 - Carrito editable: sumar, restar y quitar productos. Se guarda en el navegador y sobrevive a recargar la página.
-- Pago en tres pasos (carrito, datos y pago, confirmación) con validación de los datos.
+- Pago en tres pasos (carrito, datos y pago, confirmación) con validación de los datos. El **teléfono (WhatsApp) es obligatorio y el correo es opcional**.
 - Formas de pago: efectivo contra entrega activo. Transferencia y tarjeta aparecen como "Próximamente".
+- Tres botones en la cabecera (Entrega a domicilio, Pago contra entrega, Avisos por WhatsApp) que abren una ventana explicando cómo funciona cada cosa y qué falta por activar.
 - Pantalla final con número de pedido, factura, total y estado de la entrega.
 - Diseño adaptable a móvil, accesible con teclado y sin librerías externas.
 
@@ -62,3 +63,4 @@ El código fuente es `storefront/index.html`. Para publicar un cambio:
 - No hay límite de pedidos por visitante: una página pública puede recibir pedidos falsos. Antes de salir a internet hay que añadir límites de uso y una verificación (por ejemplo Cloudflare Turnstile).
 - El stock se descuenta al confirmar el pedido, no al agregar al carrito. Dos clientes pueden querer el último producto y el segundo recibirá un aviso de existencia insuficiente.
 - No hay cuentas de cliente ni historial de pedidos.
+- La pantalla de confirmación y el botón "Avisos por WhatsApp" prometen avisos por WhatsApp, pero WhatsApp aún no está conectado. Hasta entonces, un cliente sin correo no recibe los avisos y solo ve su número de pedido en pantalla. El aviso queda guardado como `whatsapp_pending` en `Activity_Log`.

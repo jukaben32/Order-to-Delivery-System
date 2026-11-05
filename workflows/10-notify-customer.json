@@ -1,0 +1,402 @@
+{
+  "updatedAt": "2026-11-05T02:21:23.860Z",
+  "createdAt": "2026-11-05T02:21:13.998Z",
+  "id": "9q6k5zJyOyu8LfKa",
+  "name": "Demo Traders - Notify Customer",
+  "description": null,
+  "active": false,
+  "isArchived": false,
+  "nodes": [
+    {
+      "id": "ee337d3b-5e7d-4ec8-98ce-36a280b36d0f",
+      "name": "Notify trigger",
+      "type": "n8n-nodes-base.executeWorkflowTrigger",
+      "typeVersion": 1.3,
+      "position": [
+        0,
+        96
+      ],
+      "parameters": {
+        "inputSource": "workflowInputs",
+        "workflowInputs": {
+          "values": [
+            {
+              "name": "order_id",
+              "type": "string"
+            },
+            {
+              "name": "event",
+              "type": "string"
+            },
+            {
+              "name": "customer_name",
+              "type": "string"
+            },
+            {
+              "name": "customer_email",
+              "type": "string"
+            },
+            {
+              "name": "customer_phone",
+              "type": "string"
+            },
+            {
+              "name": "subject",
+              "type": "string"
+            },
+            {
+              "name": "message",
+              "type": "string"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "07640a9e-57f7-4151-a685-080e67e27315",
+      "name": "Plan channels",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        224,
+        96
+      ],
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "language": "javaScript",
+        "jsCode": "const t = $input.first().json;\nconst email = String(t.customer_email || '').trim().toLowerCase();\nconst hasEmail = /^[^@\\s]+@[^@\\s]+\\.[^@\\s]+$/.test(email);\nconst phone = String(t.customer_phone || '').replace(/\\D/g, '');\nreturn [{ json: { send_email: hasEmail, email: hasEmail ? email : '', phone: phone, has_phone: phone.length >= 7, order_id: String(t.order_id || ''), event: String(t.event || ''), subject: String(t.subject || ''), message: String(t.message || ''), name: String(t.customer_name || '') } }];"
+      },
+      "notes": "Why Code: decides how to reach the customer. Email only when a valid email exists. WhatsApp is not connected yet, so a customer without email gets the message saved as whatsapp_pending in Activity_Log; connect Evolution API or Meta here later."
+    },
+    {
+      "id": "9c313c75-2e85-448a-a16a-6193c59056fa",
+      "name": "Has email?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.4,
+      "position": [
+        448,
+        96
+      ],
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict"
+          },
+          "conditions": [
+            {
+              "leftValue": "={{ $json.send_email }}",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        }
+      }
+    },
+    {
+      "id": "24b096c7-ced2-4474-8ae1-69419196f608",
+      "name": "Send email",
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.2,
+      "position": [
+        672,
+        0
+      ],
+      "parameters": {
+        "resource": "message",
+        "operation": "send",
+        "sendTo": "={{ $json.email }}",
+        "subject": "={{ $json.subject }}",
+        "emailType": "text",
+        "message": "={{ $json.message }}",
+        "options": {
+          "appendAttribution": false
+        }
+      },
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "oOJ0vvQfmwr3MpT0",
+          "name": "Demo Traders Gmail"
+        }
+      },
+      "webhookId": "85285698-445c-461c-8bd8-cecf5a19160a"
+    },
+    {
+      "id": "6ad6359e-de84-4572-9ae5-8fd6f7d5fa74",
+      "name": "Log email sent",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        896,
+        0
+      ],
+      "parameters": {
+        "resource": "sheet",
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "1uFc0RmztEiY9tcsNGLe0bExBuhJ5Zxjp6j-J7WfYYjc"
+        },
+        "sheetName": {
+          "__rl": true,
+          "mode": "name",
+          "value": "Activity_Log"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Time": "={{ $now.toFormat(\"yyyy-MM-dd HH:mm:ss\") }}",
+            "Agent": "Notify",
+            "Action": "email_sent",
+            "Ref_ID": "={{ $(\"Plan channels\").first().json.order_id }}",
+            "Details": "={{ $(\"Plan channels\").first().json.event }}: correo enviado"
+          },
+          "schema": [
+            {
+              "id": "Time",
+              "displayName": "Time",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Agent",
+              "displayName": "Agent",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Action",
+              "displayName": "Action",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Ref_ID",
+              "displayName": "Ref_ID",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Details",
+              "displayName": "Details",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            }
+          ]
+        },
+        "options": {
+          "cellFormat": "RAW"
+        }
+      },
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "uVqG7fQd8cxSfaMU",
+          "name": "order to delivery system"
+        }
+      },
+      "retryOnFail": true,
+      "maxTries": 5,
+      "waitBetweenTries": 5000
+    },
+    {
+      "id": "60b8d7c5-0af8-448f-83f6-a1fd911aef8e",
+      "name": "Log WhatsApp pending",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        672,
+        192
+      ],
+      "parameters": {
+        "resource": "sheet",
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "1uFc0RmztEiY9tcsNGLe0bExBuhJ5Zxjp6j-J7WfYYjc"
+        },
+        "sheetName": {
+          "__rl": true,
+          "mode": "name",
+          "value": "Activity_Log"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Time": "={{ $now.toFormat(\"yyyy-MM-dd HH:mm:ss\") }}",
+            "Agent": "Notify",
+            "Action": "whatsapp_pending",
+            "Ref_ID": "={{ $json.order_id }}",
+            "Details": "={{ $json.event }} | WhatsApp {{ $json.phone }} | {{ String($json.message).replace(/\\n/g, \" \").slice(0, 250) }}"
+          },
+          "schema": [
+            {
+              "id": "Time",
+              "displayName": "Time",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Agent",
+              "displayName": "Agent",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Action",
+              "displayName": "Action",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Ref_ID",
+              "displayName": "Ref_ID",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Details",
+              "displayName": "Details",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            }
+          ]
+        },
+        "options": {
+          "cellFormat": "RAW"
+        }
+      },
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "uVqG7fQd8cxSfaMU",
+          "name": "order to delivery system"
+        }
+      },
+      "retryOnFail": true,
+      "maxTries": 5,
+      "waitBetweenTries": 5000
+    },
+    {
+      "id": "81829e90-52f6-4815-a71e-dc3028e6d239",
+      "name": "Sticky Note 09083966",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        416,
+        0
+      ],
+      "parameters": {
+        "content": "## WhatsApp\nWhatsApp todavia no esta conectado. Los clientes sin correo reciben su aviso como **whatsapp_pending** en Activity_Log (con el telefono y el texto listo).\n\nPara activarlo: conecta Evolution API (pruebas) o la API oficial de Meta (produccion) y agrega aqui un nodo de envio en la rama \"sin correo\". Los textos ya estan redactados para WhatsApp.",
+        "color": 4,
+        "width": 160,
+        "height": 224
+      }
+    }
+  ],
+  "connections": {
+    "Notify trigger": {
+      "main": [
+        [
+          {
+            "node": "Plan channels",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Plan channels": {
+      "main": [
+        [
+          {
+            "node": "Has email?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Has email?": {
+      "main": [
+        [
+          {
+            "node": "Send email",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Log WhatsApp pending",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send email": {
+      "main": [
+        [
+          {
+            "node": "Log email sent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "availableInMCP": true,
+    "timezone": "America/Santo_Domingo"
+  },
+  "meta": {
+    "aiBuilderAssisted": true,
+    "builderVariant": "mcp"
+  },
+  "nodeGroups": [],
+  "versionId": "406e3d9a-883f-4b8a-a98e-2f01f1fe14dc",
+  "activeVersionId": "406e3d9a-883f-4b8a-a98e-2f01f1fe14dc",
+  "sourceWorkflowId": null,
+  "versionMetadata": {
+    "name": "Notify: email when available, WhatsApp-ready otherwise",
+    "description": "Created with 7 nodes: Notify trigger, Plan channels, Has email?, Send email, Log email sent and 2 more"
+  }
+}
