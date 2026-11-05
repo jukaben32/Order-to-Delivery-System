@@ -5,7 +5,7 @@
     "active": false,
     "nodes": [
       {
-        "id": "574e8f4e-40d0-4879-a4f3-920cfd2b6de6",
+        "id": "92c61cb8-89cf-4f18-8cf6-86bc70d709dc",
         "name": "OpenWA webhook",
         "type": "n8n-nodes-base.webhook",
         "typeVersion": 2.1,
@@ -13,7 +13,7 @@
           0,
           200
         ],
-        "webhookId": "f1f3c12f-a7ba-4e44-ab2e-8ae675223694",
+        "webhookId": "1dc82f7b-2869-4a98-af0e-ad8230fff6ab",
         "parameters": {
           "httpMethod": "POST",
           "path": "wa-inbound-PLACEHOLDER",
@@ -22,7 +22,7 @@
         }
       },
       {
-        "id": "60b89fba-e96c-430a-b409-8a1f8f97b562",
+        "id": "3c133407-72ae-45a2-9f58-f046b2251d24",
         "name": "Filter message",
         "type": "n8n-nodes-base.code",
         "typeVersion": 2,
@@ -33,12 +33,12 @@
         "parameters": {
           "mode": "runOnceForAllItems",
           "language": "javaScript",
-          "jsCode": "// Why Code: validates the OpenWA webhook, applies the test allowlist and drops duplicates.\nconst ALLOW = [];   // numbers allowed to talk to the bot (digits with country code). Empty = nobody.\nconst OWN = '18499192565';\nconst SELF_CHATS = ['55182427721886@lid'];   // the self chat (note to self) of the test account\nconst body = $input.first().json.body || $input.first().json;\nconst d = body.data || {};\nconst key = String(body.idempotencyKey || d.id || '');\nconst chatId = String(d.chatId || d.from || '');\nconst text = String(d.body || '').trim();\nconst isGroup = chatId.endsWith('@g.us') || chatId.includes('broadcast') || chatId.includes('status');\nconst isSelf = SELF_CHATS.includes(chatId);\nconst phone = isSelf ? OWN : (chatId.endsWith('@c.us') ? chatId.replace(/@c\\.us$/, '').replace(/\\D/g, '') : '');\nconst sd = $getWorkflowStaticData('global');\nsd.seen = sd.seen || [];\nconst dup = key && sd.seen.includes(key);\nif (key) { sd.seen.push(key); if (sd.seen.length > 200) sd.seen = sd.seen.slice(-100); }\nlet skip = '';\nif (body.event && body.event !== 'message.received' && !(body.event === 'message.sent' && isSelf)) skip = 'event ' + body.event;\nelse if (text.startsWith('🤖')) skip = 'bot message';   // replies of the bot carry this mark: no loops\nelse if (d.fromMe === true && phone !== OWN) skip = 'outgoing to others';   // only the self chat (test mode) may be fromMe\nelse if (isGroup) skip = 'group';\nelse if (!text || (d.type && d.type !== 'chat' && d.type !== 'text')) skip = 'not text';\nelse if (dup) skip = 'duplicate';\nelse if (!phone) skip = 'unresolved sender ' + chatId;\nelse if (!ALLOW.includes(phone)) skip = 'not allowlisted';\nreturn [{ json: { ok: skip === '', skip, phone, chatId, text, key } }];\n"
+          "jsCode": "// Why Code: validates the OpenWA webhook, applies the test allowlist and drops duplicates.\nconst ALLOW = [];   // numbers allowed to talk to the bot (digits with country code). Empty = nobody.\nconst OWN = '18499192565';\nconst SELF_CHATS = ['55182427721886@lid'];   // the self chat (note to self) of the test account\nconst body = $input.first().json.body || $input.first().json;\nconst d = body.data || {};\nconst key = String(body.idempotencyKey || d.id || '');\nconst chatId = String(d.chatId || d.from || '');\nconst text = String(d.body || '').trim();\nconst isGroup = chatId.endsWith('@g.us') || chatId.includes('broadcast') || chatId.includes('status');\nconst isSelf = SELF_CHATS.includes(chatId);\nconst phone = isSelf ? OWN : (chatId.endsWith('@c.us') ? chatId.replace(/@c\\.us$/, '').replace(/\\D/g, '') : '');\nconst sd = $getWorkflowStaticData('global');\nsd.seen = sd.seen || [];\nconst dup = key && sd.seen.includes(key);\nif (key) { sd.seen.push(key); if (sd.seen.length > 200) sd.seen = sd.seen.slice(-100); }\nlet skip = '';\nif (body.event && body.event !== 'message.received' && !(body.event === 'message.sent' && isSelf)) skip = 'event ' + body.event;\nelse if (text.startsWith('🤖')) skip = 'bot message';   // replies of the bot carry this mark: no loops\nelse if (d.fromMe === true && phone !== OWN) skip = 'outgoing to others';   // only the self chat (test mode) may be fromMe\nelse if (isGroup) skip = 'group';\nelse if (!text || (d.type && d.type !== 'chat' && d.type !== 'text')) skip = 'not text';\nelse if (dup) skip = 'duplicate';\nelse if (!phone) skip = 'unresolved sender ' + chatId;\nelse if (!ALLOW.includes(phone)) skip = 'not allowlisted';\nconst notice = skip === 'not text' && !!phone && ALLOW.includes(phone);   // voice note, photo, sticker from an allowed number\nreturn [{ json: { ok: skip === '', skip, notice, phone, chatId, text, key } }];\n"
         },
         "notes": "Allowlist: only the numbers listed in ALLOW get answers. Empty list = the bot stays silent."
       },
       {
-        "id": "2191e6f9-8509-4712-8fb0-02232f4daa04",
+        "id": "c09971e7-4836-43b1-a3da-016febac4d9f",
         "name": "Should answer?",
         "type": "n8n-nodes-base.if",
         "typeVersion": 2.4,
@@ -68,7 +68,7 @@
         }
       },
       {
-        "id": "48b2d8d0-6b58-4b23-8501-b772c590fc3f",
+        "id": "1ed96523-7ad1-4bfb-b72e-c3f742e1e928",
         "name": "WhatsApp front desk",
         "type": "@n8n/n8n-nodes-langchain.agent",
         "typeVersion": 3.1,
@@ -87,7 +87,7 @@
         "onError": "continueRegularOutput"
       },
       {
-        "id": "1601e6c5-b2c6-47ef-844f-ca790a916503",
+        "id": "11c8da15-13c5-4960-bd6f-f998eb19a5b2",
         "name": "Claude (WhatsApp)",
         "type": "@n8n/n8n-nodes-langchain.lmChatAnthropic",
         "typeVersion": 1.6,
@@ -114,7 +114,7 @@
         }
       },
       {
-        "id": "9a4ddaa0-e66c-4739-8fe3-141fe6f0be1f",
+        "id": "8ddd7017-ae50-41db-8c24-c1e9c4b0c4db",
         "name": "Memory per phone",
         "type": "@n8n/n8n-nodes-langchain.memoryBufferWindow",
         "typeVersion": 1.4,
@@ -129,7 +129,7 @@
         }
       },
       {
-        "id": "22bb46b0-7e38-4dfd-8690-1cb74d2cf636",
+        "id": "943a2c69-9b6b-473b-8daa-b407b52fff36",
         "name": "Order agent",
         "type": "@n8n/n8n-nodes-langchain.toolWorkflow",
         "typeVersion": 2.2,
@@ -169,7 +169,7 @@
         }
       },
       {
-        "id": "e423bc38-2936-4c0c-86d9-128c237a52be",
+        "id": "5bfe7718-3259-4629-9529-a236bd926617",
         "name": "Support agent",
         "type": "@n8n/n8n-nodes-langchain.toolWorkflow",
         "typeVersion": 2.2,
@@ -209,7 +209,7 @@
         }
       },
       {
-        "id": "147b6f1c-5dd7-4172-a5ee-f6098ba23093",
+        "id": "789585fe-1591-47f0-8ecc-e1ac495c42a5",
         "name": "Products",
         "type": "n8n-nodes-base.googleSheetsTool",
         "typeVersion": 4.7,
@@ -239,7 +239,7 @@
         }
       },
       {
-        "id": "7c8bebfe-432c-4e1f-be8c-c38c7523966c",
+        "id": "937e3a04-cd6f-4446-be21-1dedc066c214",
         "name": "Prepare reply",
         "type": "n8n-nodes-base.code",
         "typeVersion": 2,
@@ -254,7 +254,7 @@
         }
       },
       {
-        "id": "abddfd6e-f32f-4ad6-acd5-7affa3354a73",
+        "id": "b154dc01-9353-4290-8fb7-4621de439f81",
         "name": "Send reply",
         "type": "n8n-nodes-base.httpRequest",
         "typeVersion": 4.2,
@@ -283,7 +283,7 @@
         "onError": "continueRegularOutput"
       },
       {
-        "id": "af8f9f1f-4f66-4f16-974e-85f7cea01be7",
+        "id": "e61da385-60de-4c3f-bd78-0b2685e615d2",
         "name": "Log reply",
         "type": "n8n-nodes-base.googleSheets",
         "typeVersion": 4.7,
@@ -376,7 +376,7 @@
         }
       },
       {
-        "id": "da2722ef-3cb5-4d19-b25a-018db70f047b",
+        "id": "e9d448a1-bce5-472f-8897-256dbcaa8d21",
         "name": "Log ignored",
         "type": "n8n-nodes-base.googleSheets",
         "typeVersion": 4.7,
@@ -403,8 +403,8 @@
               "Time": "={{ $now.toFormat(\"yyyy-MM-dd HH:mm:ss\") }}",
               "Agent": "WhatsApp",
               "Action": "message_ignored",
-              "Ref_ID": "=wa-{{ $json.phone }}",
-              "Details": "={{ $json.skip }}"
+              "Ref_ID": "=wa-{{ $('Filter message').first().json.phone }}",
+              "Details": "={{ $('Filter message').first().json.skip }}{{ $('Filter message').first().json.notice ? ' (aviso de solo texto enviado)' : '' }}"
             },
             "schema": [
               {
@@ -469,7 +469,66 @@
         }
       },
       {
-        "id": "94596c7e-01ff-4ae4-84ea-29903f73fa16",
+        "id": "ae7412e0-355b-4a10-987e-985588e9bad3",
+        "name": "Voice or media?",
+        "type": "n8n-nodes-base.if",
+        "typeVersion": 2.4,
+        "position": [
+          672,
+          520
+        ],
+        "parameters": {
+          "conditions": {
+            "options": {
+              "caseSensitive": true,
+              "leftValue": "",
+              "typeValidation": "strict"
+            },
+            "conditions": [
+              {
+                "leftValue": "={{ $json.notice }}",
+                "operator": {
+                  "type": "boolean",
+                  "operation": "true",
+                  "singleValue": true
+                }
+              }
+            ],
+            "combinator": "and"
+          }
+        }
+      },
+      {
+        "id": "b3568e48-064f-4288-86e7-c176d593d871",
+        "name": "Send text-only notice",
+        "type": "n8n-nodes-base.httpRequest",
+        "typeVersion": 4.2,
+        "position": [
+          896,
+          440
+        ],
+        "parameters": {
+          "method": "POST",
+          "url": "http://localhost:2785/api/sessions/9478bd38-41f3-4cb9-b9b2-b178948fbd56/messages/send-text",
+          "authentication": "genericCredentialType",
+          "genericAuthType": "httpHeaderAuth",
+          "sendBody": true,
+          "specifyBody": "json",
+          "jsonBody": "={{ JSON.stringify({ chatId: $json.chatId, text: '🤖 Por ahora solo leo mensajes de texto. ¿Me lo puedes escribir?' }) }}",
+          "options": {
+            "timeout": 20000
+          }
+        },
+        "credentials": {
+          "httpHeaderAuth": {
+            "id": "OpenWAKey01",
+            "name": "OpenWA API key"
+          }
+        },
+        "onError": "continueRegularOutput"
+      },
+      {
+        "id": "7e8ca9ca-ca79-49d9-9150-a8500e29dabc",
         "name": "Note",
         "type": "n8n-nodes-base.stickyNote",
         "typeVersion": 1,
@@ -517,6 +576,35 @@
               "index": 0
             }
           ],
+          [
+            {
+              "node": "Voice or media?",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Voice or media?": {
+        "main": [
+          [
+            {
+              "node": "Send text-only notice",
+              "type": "main",
+              "index": 0
+            }
+          ],
+          [
+            {
+              "node": "Log ignored",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Send text-only notice": {
+        "main": [
           [
             {
               "node": "Log ignored",

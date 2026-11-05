@@ -99,7 +99,8 @@ else if (!text || (d.type && d.type !== 'chat' && d.type !== 'text')) skip = 'no
 else if (dup) skip = 'duplicate';
 else if (!phone) skip = 'unresolved sender ' + chatId;
 else if (!ALLOW.includes(phone)) skip = 'not allowlisted';
-return [{ json: { ok: skip === '', skip, phone, chatId, text, key } }];
+const notice = skip === 'not text' && !!phone && ALLOW.includes(phone);   // voice note, photo, sticker from an allowed number
+return [{ json: { ok: skip === '', skip, notice, phone, chatId, text, key } }];
 """.replace('__ALLOW__', json.dumps(ALLOW)).replace('__OWN__', OWN_NUMBER)
 
 webhook = {'id': nid(), 'name': 'OpenWA webhook', 'type': 'n8n-nodes-base.webhook', 'typeVersion': 2.1,
@@ -145,15 +146,20 @@ logr = log_node('Log reply', 'WhatsApp',
                 "={{ $json.error ? 'ERROR enviando: ' + String($json.error.message || $json.error).slice(0, 150) : "
                 "'Respuesta enviada (' + String($('Prepare reply').first().json.text).length + ' caracteres)' }}",
                 [1448, 100])
-logs = log_node('Log ignored', 'WhatsApp', 'message_ignored', "=wa-{{ $json.phone }}", "={{ $json.skip }}", [672, 520])
+notice_if = if_true('Voice or media?', '={{ $json.notice }}', [672, 520])
+notice_send = send_node('Send text-only notice', '$json.chatId', "'🤖 Por ahora solo leo mensajes de texto. ¿Me lo puedes escribir?'", [896, 440])
+logs = log_node('Log ignored', 'WhatsApp', 'message_ignored', "=wa-{{ $('Filter message').first().json.phone }}", "={{ $('Filter message').first().json.skip }}{{ $('Filter message').first().json.notice ? ' (aviso de solo texto enviado)' : '' }}", [672, 520])
 note = {'id': nid(), 'name': 'Note', 'type': 'n8n-nodes-base.stickyNote', 'typeVersion': 1, 'position': [0, 380],
         'parameters': {'content': "## WhatsApp (OpenWA)\nOpenWA envia cada mensaje a este webhook. Solo responde a los numeros de la lista ALLOW de 'Filter message'. La memoria es por telefono. Las respuestas salen por `send-text` de la sesion `delivery-system`.",
                        'color': 4, 'width': 360, 'height': 180}}
-nodes = [webhook, filt, gate, agent, llm, mem] + tools + [prep, send, logr, logs, note]
+nodes = [webhook, filt, gate, agent, llm, mem] + tools + [prep, send, logr, logs, notice_if, notice_send, note]
 conn = {
     'OpenWA webhook': {'main': [link('Filter message')]},
     'Filter message': {'main': [link('Should answer?')]},
-    'Should answer?': {'main': [link('WhatsApp front desk'), link('Log ignored')]},
+    'Should answer?': {'main': [link('WhatsApp front desk'), link('Voice or media?')],
+    },
+    'Voice or media?': {'main': [link('Send text-only notice'), link('Log ignored')]},
+    'Send text-only notice': {'main': [link('Log ignored')]},
     'WhatsApp front desk': {'main': [link('Prepare reply')]},
     'Prepare reply': {'main': [link('Send reply')]},
     'Send reply': {'main': [link('Log reply')]},
