@@ -1,0 +1,355 @@
+{
+  "updatedAt": "2026-11-05T00:27:04.587Z",
+  "createdAt": "2026-11-05T00:20:03.084Z",
+  "id": "hJkDbQ5dy7pHcvds",
+  "name": "Demo Traders - Support Agent",
+  "description": null,
+  "active": false,
+  "isArchived": false,
+  "nodes": [
+    {
+      "id": "2970c503-1f97-450a-8f5a-79bc163955e9",
+      "name": "Support trigger",
+      "type": "n8n-nodes-base.executeWorkflowTrigger",
+      "typeVersion": 1.3,
+      "position": [
+        0,
+        112
+      ],
+      "parameters": {
+        "inputSource": "workflowInputs",
+        "workflowInputs": {
+          "values": [
+            {
+              "name": "question",
+              "type": "string"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "2435359e-859f-42f6-ae40-023d87068467",
+      "name": "Support agent",
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3.1,
+      "position": [
+        288,
+        112
+      ],
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ $json.question }}",
+        "options": {
+          "systemMessage": "You are the Support Agent of Demo Traders, a grocery shop. You answer questions about where an order is.\n\nRules:\n- Use ONLY the tools. \"Find order\" reads the Orders sheet and \"Find dispatch\" reads the Dispatch sheet. Search with the exact order number, for example ORD-1001.\n- Never guess. If the order is not found, say so and ask the customer to check the number.\n- Report: order status, payment status, and, if there is a dispatch row, the rider, the vehicle, when it left and when it was delivered.\n- Status meanings: New = received; Invoiced = invoice sent, preparing; Waiting for rider = no rider is free yet, it will leave as soon as one is; Dispatched = on the way; Delivered = delivered.\n- Do not reveal the customer personal data (phone, email, address) and do not list the items or prices; only the status information above.\n- You are read-only. You cannot change, cancel or create anything.\n- Answer in the same language as the customer, in 1 to 3 short sentences.",
+          "maxIterations": 6
+        }
+      }
+    },
+    {
+      "id": "3eb2b150-ceee-43b8-a70e-601ac1e06bc2",
+      "name": "Claude (Support)",
+      "type": "@n8n/n8n-nodes-langchain.lmChatAnthropic",
+      "typeVersion": 1.6,
+      "position": [
+        224,
+        336
+      ],
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "mode": "list",
+          "value": "claude-sonnet-5-5",
+          "cachedResultName": "Claude Sonnet 5.5"
+        },
+        "options": {
+          "maxTokensToSample": 1024
+        }
+      },
+      "credentials": {
+        "anthropicApi": {
+          "id": "pu1mRjJVOc4NZZMx",
+          "name": "Anthropic account"
+        }
+      }
+    },
+    {
+      "id": "cb7ffbb5-a6f1-4b00-8be5-8e0e38a0b847",
+      "name": "Find order",
+      "type": "n8n-nodes-base.googleSheetsTool",
+      "typeVersion": 4.7,
+      "position": [
+        352,
+        336
+      ],
+      "parameters": {
+        "resource": "sheet",
+        "operation": "read",
+        "documentId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "1uFc0RmztEiY9tcsNGLe0bExBuhJ5Zxjp6j-J7WfYYjc"
+        },
+        "sheetName": {
+          "__rl": true,
+          "mode": "name",
+          "value": "Orders"
+        },
+        "filtersUI": {
+          "values": [
+            {
+              "lookupColumn": "Order_ID",
+              "lookupValue": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('order_id', 'The order number, for example ORD-1001') }}"
+            }
+          ]
+        }
+      },
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "uVqG7fQd8cxSfaMU",
+          "name": "order to delivery system"
+        }
+      }
+    },
+    {
+      "id": "a984666f-9943-4ea2-83af-459c09e97f34",
+      "name": "Find dispatch",
+      "type": "n8n-nodes-base.googleSheetsTool",
+      "typeVersion": 4.7,
+      "position": [
+        480,
+        336
+      ],
+      "parameters": {
+        "resource": "sheet",
+        "operation": "read",
+        "documentId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "1uFc0RmztEiY9tcsNGLe0bExBuhJ5Zxjp6j-J7WfYYjc"
+        },
+        "sheetName": {
+          "__rl": true,
+          "mode": "name",
+          "value": "Dispatch"
+        },
+        "filtersUI": {
+          "values": [
+            {
+              "lookupColumn": "Order_ID",
+              "lookupValue": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('order_id', 'The order number, for example ORD-1001') }}"
+            }
+          ]
+        }
+      },
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "uVqG7fQd8cxSfaMU",
+          "name": "order to delivery system"
+        }
+      }
+    },
+    {
+      "id": "038b173b-c1ff-448e-a1b5-52aec115e1ac",
+      "name": "Log support query",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        688,
+        112
+      ],
+      "parameters": {
+        "resource": "sheet",
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "1uFc0RmztEiY9tcsNGLe0bExBuhJ5Zxjp6j-J7WfYYjc"
+        },
+        "sheetName": {
+          "__rl": true,
+          "mode": "name",
+          "value": "Activity_Log"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Time": "={{ $now.toFormat(\"yyyy-MM-dd HH:mm:ss\") }}",
+            "Agent": "Support",
+            "Action": "status_question",
+            "Ref_ID": "={{ (String($(\"Support trigger\").first().json.question).match(/ORD-\\d+/i) || [\"\"])[0].toUpperCase() }}",
+            "Details": "={{ String($(\"Support trigger\").first().json.question).slice(0, 200) }}"
+          },
+          "schema": [
+            {
+              "id": "Time",
+              "displayName": "Time",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Agent",
+              "displayName": "Agent",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Action",
+              "displayName": "Action",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Ref_ID",
+              "displayName": "Ref_ID",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Details",
+              "displayName": "Details",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            }
+          ]
+        },
+        "options": {
+          "cellFormat": "RAW"
+        }
+      },
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "uVqG7fQd8cxSfaMU",
+          "name": "order to delivery system"
+        }
+      },
+      "retryOnFail": true,
+      "maxTries": 5,
+      "waitBetweenTries": 5000
+    },
+    {
+      "id": "b767d79b-1216-44e7-b3ed-c9f0c5c5eda5",
+      "name": "Support reply",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.5,
+      "position": [
+        912,
+        112
+      ],
+      "parameters": {
+        "mode": "manual",
+        "assignments": {
+          "assignments": [
+            {
+              "id": "s1",
+              "name": "reply",
+              "value": "={{ $(\"Support agent\").first().json.output }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      }
+    }
+  ],
+  "connections": {
+    "Support trigger": {
+      "main": [
+        [
+          {
+            "node": "Support agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Support agent": {
+      "main": [
+        [
+          {
+            "node": "Log support query",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Claude (Support)": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Support agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Find order": {
+      "ai_tool": [
+        [
+          {
+            "node": "Support agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Find dispatch": {
+      "ai_tool": [
+        [
+          {
+            "node": "Support agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Log support query": {
+      "main": [
+        [
+          {
+            "node": "Support reply",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "availableInMCP": true,
+    "timezone": "America/Santo_Domingo"
+  },
+  "meta": {
+    "aiBuilderAssisted": true,
+    "builderVariant": "mcp"
+  },
+  "nodeGroups": [],
+  "versionId": "c7a5a7b8-eea7-40f3-9d81-cb1029b69561",
+  "activeVersionId": "c7a5a7b8-eea7-40f3-9d81-cb1029b69561",
+  "sourceWorkflowId": null,
+  "versionMetadata": {
+    "name": "Retry Sheets nodes on rate limit",
+    "description": "Updated nodes: Log support query"
+  }
+}

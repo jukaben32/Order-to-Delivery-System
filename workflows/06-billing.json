@@ -1,0 +1,1245 @@
+{
+  "updatedAt": "2026-11-05T00:26:59.336Z",
+  "createdAt": "2026-11-05T00:17:44.432Z",
+  "id": "rWiEuk09Jwbn2sqb",
+  "name": "Demo Traders - Billing",
+  "description": null,
+  "active": false,
+  "isArchived": false,
+  "nodes": [
+    {
+      "id": "d26e24f4-690d-47e5-a832-de40e1d00a37",
+      "name": "Billing trigger",
+      "type": "n8n-nodes-base.executeWorkflowTrigger",
+      "typeVersion": 1.3,
+      "position": [
+        0,
+        0
+      ],
+      "parameters": {
+        "inputSource": "passthrough"
+      }
+    },
+    {
+      "id": "bd5f00d0-9d2b-431e-960f-02b6cb945258",
+      "name": "Read invoices",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        224,
+        0
+      ],
+      "parameters": {
+        "resource": "sheet",
+        "operation": "read",
+        "documentId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "1uFc0RmztEiY9tcsNGLe0bExBuhJ5Zxjp6j-J7WfYYjc"
+        },
+        "sheetName": {
+          "__rl": true,
+          "mode": "name",
+          "value": "Invoices"
+        }
+      },
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "uVqG7fQd8cxSfaMU",
+          "name": "order to delivery system"
+        }
+      },
+      "alwaysOutputData": true,
+      "retryOnFail": true,
+      "maxTries": 5,
+      "waitBetweenTries": 5000
+    },
+    {
+      "id": "45cda53a-4c6f-4e33-b070-e05e9116a9a8",
+      "name": "Next invoice number",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        448,
+        0
+      ],
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "language": "javaScript",
+        "jsCode": "const p = $('Billing trigger').first().json;\nlet max = 1000;\n$input.all().forEach(function (i) {\n  const m = String(i.json.Invoice_No || '').match(/^INV-(\\d+)$/);\n  if (m && Number(m[1]) > max) { max = Number(m[1]); }\n});\nconst orderDate = String(p.order_date || $now.toFormat('yyyy-MM-dd')).slice(0, 10);\nconst due = DateTime.fromISO(orderDate).plus({ days: 7 }).toFormat('yyyy-MM-dd');\nreturn [{ json: { Invoice_No: 'INV-' + (max + 1), Order_ID: p.order_id, Date: orderDate, Amount: Number(p.total), Due_Date: due, Status: 'Unpaid', customer_name: p.customer_name, customer_email: p.customer_email } }];"
+      },
+      "notes": "Why Code: finds the highest INV number already in the sheet (ignoring the empty placeholder row) and adds 1; first invoice is INV-1001. Due date = order date + 7 days."
+    },
+    {
+      "id": "d2dc7775-b7cd-4885-81eb-04cda6d61297",
+      "name": "Save invoice",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        672,
+        0
+      ],
+      "parameters": {
+        "resource": "sheet",
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "1uFc0RmztEiY9tcsNGLe0bExBuhJ5Zxjp6j-J7WfYYjc"
+        },
+        "sheetName": {
+          "__rl": true,
+          "mode": "name",
+          "value": "Invoices"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Invoice_No": "={{ $json.Invoice_No }}",
+            "Order_ID": "={{ $json.Order_ID }}",
+            "Date": "={{ $json.Date }}",
+            "Amount": "={{ $json.Amount }}",
+            "Due_Date": "={{ $json.Due_Date }}",
+            "Status": "={{ $json.Status }}"
+          },
+          "schema": [
+            {
+              "id": "Invoice_No",
+              "displayName": "Invoice_No",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Order_ID",
+              "displayName": "Order_ID",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Date",
+              "displayName": "Date",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Amount",
+              "displayName": "Amount",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Due_Date",
+              "displayName": "Due_Date",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Status",
+              "displayName": "Status",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            }
+          ]
+        },
+        "options": {
+          "cellFormat": "RAW"
+        }
+      },
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "uVqG7fQd8cxSfaMU",
+          "name": "order to delivery system"
+        }
+      },
+      "retryOnFail": true,
+      "maxTries": 5,
+      "waitBetweenTries": 5000
+    },
+    {
+      "id": "bf218f4e-c556-4a32-b2dc-03f178f3a70d",
+      "name": "Mark order invoiced",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        896,
+        0
+      ],
+      "parameters": {
+        "resource": "sheet",
+        "operation": "update",
+        "documentId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "1uFc0RmztEiY9tcsNGLe0bExBuhJ5Zxjp6j-J7WfYYjc"
+        },
+        "sheetName": {
+          "__rl": true,
+          "mode": "name",
+          "value": "Orders"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Order_ID": "={{ $(\"Next invoice number\").first().json.Order_ID }}",
+            "Status": "Invoiced"
+          },
+          "matchingColumns": [
+            "Order_ID"
+          ],
+          "schema": [
+            {
+              "id": "Order_ID",
+              "displayName": "Order_ID",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Status",
+              "displayName": "Status",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": false
+            }
+          ]
+        },
+        "options": {
+          "cellFormat": "RAW"
+        }
+      },
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "uVqG7fQd8cxSfaMU",
+          "name": "order to delivery system"
+        }
+      },
+      "retryOnFail": true,
+      "maxTries": 5,
+      "waitBetweenTries": 5000
+    },
+    {
+      "id": "e80049cc-27cd-43c4-acdd-33e7eb194adf",
+      "name": "Email invoice",
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.2,
+      "position": [
+        1120,
+        0
+      ],
+      "parameters": {
+        "resource": "message",
+        "operation": "send",
+        "sendTo": "={{ $(\"Next invoice number\").first().json.customer_email }}",
+        "subject": "=Invoice {{ $(\"Next invoice number\").first().json.Invoice_No }} for order {{ $(\"Next invoice number\").first().json.Order_ID }}",
+        "emailType": "text",
+        "message": "=Hello {{ $(\"Next invoice number\").first().json.customer_name }},\n\nThank you for your order {{ $(\"Next invoice number\").first().json.Order_ID }}.\n\nInvoice: {{ $(\"Next invoice number\").first().json.Invoice_No }}\nAmount due: RD$ {{ Number($(\"Next invoice number\").first().json.Amount).toLocaleString(\"en-US\") }}\nDue date: {{ $(\"Next invoice number\").first().json.Due_Date }}\nStatus: Unpaid\n\nYou can pay by cash, bank transfer or card. Reply to this email if you have any question.\n\nDemo Traders",
+        "options": {
+          "appendAttribution": false
+        }
+      },
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "oOJ0vvQfmwr3MpT0",
+          "name": "Demo Traders Gmail"
+        }
+      },
+      "webhookId": "c40b1379-4c92-4e6d-96c8-29e692fe63ba"
+    },
+    {
+      "id": "a1e6039c-957a-43e5-9c39-134735409d21",
+      "name": "Log invoice",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        1344,
+        0
+      ],
+      "parameters": {
+        "resource": "sheet",
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "1uFc0RmztEiY9tcsNGLe0bExBuhJ5Zxjp6j-J7WfYYjc"
+        },
+        "sheetName": {
+          "__rl": true,
+          "mode": "name",
+          "value": "Activity_Log"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Time": "={{ $now.toFormat(\"yyyy-MM-dd HH:mm:ss\") }}",
+            "Agent": "Billing",
+            "Action": "invoice_created",
+            "Ref_ID": "={{ $(\"Next invoice number\").first().json.Invoice_No }}",
+            "Details": "=Order {{ $(\"Next invoice number\").first().json.Order_ID }}; amount {{ $(\"Next invoice number\").first().json.Amount }}; due {{ $(\"Next invoice number\").first().json.Due_Date }}; invoice email sent"
+          },
+          "schema": [
+            {
+              "id": "Time",
+              "displayName": "Time",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Agent",
+              "displayName": "Agent",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Action",
+              "displayName": "Action",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Ref_ID",
+              "displayName": "Ref_ID",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Details",
+              "displayName": "Details",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            }
+          ]
+        },
+        "options": {
+          "cellFormat": "RAW"
+        }
+      },
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "uVqG7fQd8cxSfaMU",
+          "name": "order to delivery system"
+        }
+      },
+      "retryOnFail": true,
+      "maxTries": 5,
+      "waitBetweenTries": 5000
+    },
+    {
+      "id": "914d27dc-c230-4719-9719-451f039ade87",
+      "name": "Invoice result",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.5,
+      "position": [
+        1568,
+        0
+      ],
+      "parameters": {
+        "mode": "manual",
+        "assignments": {
+          "assignments": [
+            {
+              "id": "r1",
+              "name": "invoice_no",
+              "value": "={{ $(\"Next invoice number\").first().json.Invoice_No }}",
+              "type": "string"
+            },
+            {
+              "id": "r2",
+              "name": "order_id",
+              "value": "={{ $(\"Next invoice number\").first().json.Order_ID }}",
+              "type": "string"
+            },
+            {
+              "id": "r3",
+              "name": "amount",
+              "value": "={{ $(\"Next invoice number\").first().json.Amount }}",
+              "type": "number"
+            },
+            {
+              "id": "r4",
+              "name": "due_date",
+              "value": "={{ $(\"Next invoice number\").first().json.Due_Date }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "ae5a1218-2ced-4ab2-91ec-208a0e9aef58",
+      "name": "Record payment form",
+      "type": "n8n-nodes-base.formTrigger",
+      "typeVersion": 2.6,
+      "position": [
+        0,
+        320
+      ],
+      "parameters": {
+        "authentication": "basicAuth",
+        "formTitle": "Record payment",
+        "formDescription": "Staff only. Type the invoice number, the amount received and how it was paid.",
+        "formFields": {
+          "values": [
+            {
+              "fieldLabel": "Invoice_No",
+              "fieldType": "text",
+              "placeholder": "INV-1001",
+              "requiredField": true
+            },
+            {
+              "fieldLabel": "Amount",
+              "fieldType": "number",
+              "requiredField": true
+            },
+            {
+              "fieldLabel": "Method",
+              "fieldType": "dropdown",
+              "fieldOptions": {
+                "values": [
+                  {
+                    "option": "Cash"
+                  },
+                  {
+                    "option": "Bank"
+                  },
+                  {
+                    "option": "Card"
+                  }
+                ]
+              },
+              "requiredField": true
+            }
+          ]
+        },
+        "responseMode": "lastNode",
+        "options": {
+          "appendAttribution": false,
+          "path": "demo-traders-record-payment"
+        }
+      },
+      "webhookId": "ad2dddee-e8d6-4947-999a-37fbb1b407f3",
+      "credentials": {
+        "httpBasicAuth": {
+          "id": "FKw937EGT3VSfiqE",
+          "name": "Demo Traders Forms"
+        }
+      }
+    },
+    {
+      "id": "be92110f-ccaa-4016-9895-8aeac004a99e",
+      "name": "Read invoices for payment",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        224,
+        320
+      ],
+      "parameters": {
+        "resource": "sheet",
+        "operation": "read",
+        "documentId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "1uFc0RmztEiY9tcsNGLe0bExBuhJ5Zxjp6j-J7WfYYjc"
+        },
+        "sheetName": {
+          "__rl": true,
+          "mode": "name",
+          "value": "Invoices"
+        }
+      },
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "uVqG7fQd8cxSfaMU",
+          "name": "order to delivery system"
+        }
+      },
+      "alwaysOutputData": true,
+      "retryOnFail": true,
+      "maxTries": 5,
+      "waitBetweenTries": 5000
+    },
+    {
+      "id": "9ccf7ffc-8af4-4d00-8eea-8e9c3e748166",
+      "name": "Read payments",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        448,
+        320
+      ],
+      "parameters": {
+        "resource": "sheet",
+        "operation": "read",
+        "documentId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "1uFc0RmztEiY9tcsNGLe0bExBuhJ5Zxjp6j-J7WfYYjc"
+        },
+        "sheetName": {
+          "__rl": true,
+          "mode": "name",
+          "value": "Payments"
+        }
+      },
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "uVqG7fQd8cxSfaMU",
+          "name": "order to delivery system"
+        }
+      },
+      "executeOnce": true,
+      "alwaysOutputData": true,
+      "retryOnFail": true,
+      "maxTries": 5,
+      "waitBetweenTries": 5000
+    },
+    {
+      "id": "b3e7be4c-0450-42cf-bef9-f00392dd2fec",
+      "name": "Validate payment",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        672,
+        320
+      ],
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "language": "javaScript",
+        "jsCode": "const form = $('Record payment form').first().json;\nconst wanted = String(form.Invoice_No || '').trim().toUpperCase();\nconst inv = $('Read invoices for payment').all().map(function (i) { return i.json; }).find(function (r) { return String(r.Invoice_No || '').toUpperCase() === wanted; });\nconst payments = $input.all().map(function (i) { return i.json; }).filter(function (r) { return r.Payment_ID; });\nconst amount = Number(form.Amount);\nif (!inv) { return [{ json: { ok: false, Invoice_No: wanted, message: 'Invoice ' + wanted + ' was not found. Nothing was recorded.' } }]; }\nif (String(inv.Status) === 'Paid') { return [{ json: { ok: false, Invoice_No: inv.Invoice_No, message: 'Invoice ' + inv.Invoice_No + ' is already fully paid. Nothing was recorded.' } }]; }\nif (!(amount > 0)) { return [{ json: { ok: false, Invoice_No: inv.Invoice_No, message: 'The amount must be greater than zero. Nothing was recorded.' } }]; }\nconst due = Number(inv.Amount) || 0;\nconst before = payments.filter(function (p) { return String(p.Invoice_No) === String(inv.Invoice_No); }).reduce(function (s, p) { return s + (Number(p.Amount) || 0); }, 0);\nconst paid = before + amount;\nconst status = paid >= due ? 'Paid' : 'Partial';\nconst balance = Math.max(due - paid, 0);\nlet max = 1000;\npayments.forEach(function (p) { const m = String(p.Payment_ID).match(/^PAY-(\\d+)$/); if (m && Number(m[1]) > max) { max = Number(m[1]); } });\nconst pid = 'PAY-' + (max + 1);\nconst msg = 'Payment ' + pid + ' of RD$ ' + amount + ' recorded. Invoice ' + inv.Invoice_No + ' is now ' + status + (balance > 0 ? ' (balance RD$ ' + balance + ')' : '') + '.';\nreturn [{ json: { ok: true, Payment_ID: pid, Invoice_No: inv.Invoice_No, Order_ID: inv.Order_ID, Date: $now.toFormat('yyyy-MM-dd'), Amount: amount, Method: form.Method, Status: status, balance: balance, message: msg } }];"
+      },
+      "notes": "Why Code: looks the invoice up case-insensitively, adds up earlier payments, decides Paid vs Partial and builds the next PAY number. No AI involved in money."
+    },
+    {
+      "id": "ffef5b5d-cbe4-4fe5-b6bb-4440dc4b7ad1",
+      "name": "Payment valid?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.4,
+      "position": [
+        896,
+        320
+      ],
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict"
+          },
+          "conditions": [
+            {
+              "leftValue": "={{ $json.ok }}",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        }
+      }
+    },
+    {
+      "id": "ec5343a8-763d-4e61-b32d-c067e51c7370",
+      "name": "Save payment",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        1120,
+        224
+      ],
+      "parameters": {
+        "resource": "sheet",
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "1uFc0RmztEiY9tcsNGLe0bExBuhJ5Zxjp6j-J7WfYYjc"
+        },
+        "sheetName": {
+          "__rl": true,
+          "mode": "name",
+          "value": "Payments"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Payment_ID": "={{ $json.Payment_ID }}",
+            "Invoice_No": "={{ $json.Invoice_No }}",
+            "Date": "={{ $json.Date }}",
+            "Amount": "={{ $json.Amount }}",
+            "Method": "={{ $json.Method }}"
+          },
+          "schema": [
+            {
+              "id": "Payment_ID",
+              "displayName": "Payment_ID",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Invoice_No",
+              "displayName": "Invoice_No",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Date",
+              "displayName": "Date",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Amount",
+              "displayName": "Amount",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Method",
+              "displayName": "Method",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            }
+          ]
+        },
+        "options": {
+          "cellFormat": "RAW"
+        }
+      },
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "uVqG7fQd8cxSfaMU",
+          "name": "order to delivery system"
+        }
+      },
+      "retryOnFail": true,
+      "maxTries": 5,
+      "waitBetweenTries": 5000
+    },
+    {
+      "id": "b515b826-f8c2-4a5a-86f2-3d68130cfccf",
+      "name": "Update invoice status",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        1344,
+        224
+      ],
+      "parameters": {
+        "resource": "sheet",
+        "operation": "update",
+        "documentId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "1uFc0RmztEiY9tcsNGLe0bExBuhJ5Zxjp6j-J7WfYYjc"
+        },
+        "sheetName": {
+          "__rl": true,
+          "mode": "name",
+          "value": "Invoices"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Invoice_No": "={{ $(\"Validate payment\").first().json.Invoice_No }}",
+            "Status": "={{ $(\"Validate payment\").first().json.Status }}"
+          },
+          "matchingColumns": [
+            "Invoice_No"
+          ],
+          "schema": [
+            {
+              "id": "Invoice_No",
+              "displayName": "Invoice_No",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Status",
+              "displayName": "Status",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": false
+            }
+          ]
+        },
+        "options": {
+          "cellFormat": "RAW"
+        }
+      },
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "uVqG7fQd8cxSfaMU",
+          "name": "order to delivery system"
+        }
+      },
+      "retryOnFail": true,
+      "maxTries": 5,
+      "waitBetweenTries": 5000
+    },
+    {
+      "id": "366180ef-d8f1-4080-8fa8-173d47e9fbc1",
+      "name": "Update order payment status",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        1568,
+        224
+      ],
+      "parameters": {
+        "resource": "sheet",
+        "operation": "update",
+        "documentId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "1uFc0RmztEiY9tcsNGLe0bExBuhJ5Zxjp6j-J7WfYYjc"
+        },
+        "sheetName": {
+          "__rl": true,
+          "mode": "name",
+          "value": "Orders"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Order_ID": "={{ $(\"Validate payment\").first().json.Order_ID }}",
+            "Payment_Status": "={{ $(\"Validate payment\").first().json.Status }}"
+          },
+          "matchingColumns": [
+            "Order_ID"
+          ],
+          "schema": [
+            {
+              "id": "Order_ID",
+              "displayName": "Order_ID",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Payment_Status",
+              "displayName": "Payment_Status",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": false
+            }
+          ]
+        },
+        "options": {
+          "cellFormat": "RAW"
+        }
+      },
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "uVqG7fQd8cxSfaMU",
+          "name": "order to delivery system"
+        }
+      },
+      "retryOnFail": true,
+      "maxTries": 5,
+      "waitBetweenTries": 5000
+    },
+    {
+      "id": "78409cd0-8ff2-45fb-9d91-905ac496fe18",
+      "name": "Log payment",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        1792,
+        224
+      ],
+      "parameters": {
+        "resource": "sheet",
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "1uFc0RmztEiY9tcsNGLe0bExBuhJ5Zxjp6j-J7WfYYjc"
+        },
+        "sheetName": {
+          "__rl": true,
+          "mode": "name",
+          "value": "Activity_Log"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Time": "={{ $now.toFormat(\"yyyy-MM-dd HH:mm:ss\") }}",
+            "Agent": "Billing",
+            "Action": "payment_recorded",
+            "Ref_ID": "={{ $(\"Validate payment\").first().json.Payment_ID }}",
+            "Details": "={{ $(\"Validate payment\").first().json.message }}"
+          },
+          "schema": [
+            {
+              "id": "Time",
+              "displayName": "Time",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Agent",
+              "displayName": "Agent",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Action",
+              "displayName": "Action",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Ref_ID",
+              "displayName": "Ref_ID",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Details",
+              "displayName": "Details",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            }
+          ]
+        },
+        "options": {
+          "cellFormat": "RAW"
+        }
+      },
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "uVqG7fQd8cxSfaMU",
+          "name": "order to delivery system"
+        }
+      },
+      "retryOnFail": true,
+      "maxTries": 5,
+      "waitBetweenTries": 5000
+    },
+    {
+      "id": "96daabd6-fb40-4adf-8ddc-51f15cc1ceb2",
+      "name": "Payment recorded page",
+      "type": "n8n-nodes-base.form",
+      "typeVersion": 2.5,
+      "position": [
+        2016,
+        224
+      ],
+      "parameters": {
+        "operation": "completion",
+        "respondWith": "text",
+        "completionTitle": "Payment recorded",
+        "completionMessage": "={{ $(\"Validate payment\").first().json.message }}",
+        "options": {
+          "appendAttribution": false
+        }
+      },
+      "webhookId": "e699c904-b24b-4644-9829-e79d3cee299e"
+    },
+    {
+      "id": "1f6c1d0f-f43c-45d2-ad81-894bfd9f90aa",
+      "name": "Log rejected payment",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        1120,
+        416
+      ],
+      "parameters": {
+        "resource": "sheet",
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "1uFc0RmztEiY9tcsNGLe0bExBuhJ5Zxjp6j-J7WfYYjc"
+        },
+        "sheetName": {
+          "__rl": true,
+          "mode": "name",
+          "value": "Activity_Log"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Time": "={{ $now.toFormat(\"yyyy-MM-dd HH:mm:ss\") }}",
+            "Agent": "Billing",
+            "Action": "payment_rejected",
+            "Ref_ID": "={{ $json.Invoice_No }}",
+            "Details": "={{ $json.message }}"
+          },
+          "schema": [
+            {
+              "id": "Time",
+              "displayName": "Time",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Agent",
+              "displayName": "Agent",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Action",
+              "displayName": "Action",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Ref_ID",
+              "displayName": "Ref_ID",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Details",
+              "displayName": "Details",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            }
+          ]
+        },
+        "options": {
+          "cellFormat": "RAW"
+        }
+      },
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "uVqG7fQd8cxSfaMU",
+          "name": "order to delivery system"
+        }
+      },
+      "retryOnFail": true,
+      "maxTries": 5,
+      "waitBetweenTries": 5000
+    },
+    {
+      "id": "a74ba69a-06bf-4852-9184-40e775477a1c",
+      "name": "Payment rejected page",
+      "type": "n8n-nodes-base.form",
+      "typeVersion": 2.5,
+      "position": [
+        1344,
+        416
+      ],
+      "parameters": {
+        "operation": "completion",
+        "respondWith": "text",
+        "completionTitle": "Payment not recorded",
+        "completionMessage": "={{ $(\"Validate payment\").first().json.message }}",
+        "options": {
+          "appendAttribution": false
+        }
+      },
+      "webhookId": "abd4d965-05f4-4e1d-b062-6227393d8011"
+    }
+  ],
+  "connections": {
+    "Billing trigger": {
+      "main": [
+        [
+          {
+            "node": "Read invoices",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Read invoices": {
+      "main": [
+        [
+          {
+            "node": "Next invoice number",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Next invoice number": {
+      "main": [
+        [
+          {
+            "node": "Save invoice",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Save invoice": {
+      "main": [
+        [
+          {
+            "node": "Mark order invoiced",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Mark order invoiced": {
+      "main": [
+        [
+          {
+            "node": "Email invoice",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Email invoice": {
+      "main": [
+        [
+          {
+            "node": "Log invoice",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Log invoice": {
+      "main": [
+        [
+          {
+            "node": "Invoice result",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Record payment form": {
+      "main": [
+        [
+          {
+            "node": "Read invoices for payment",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Read invoices for payment": {
+      "main": [
+        [
+          {
+            "node": "Read payments",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Read payments": {
+      "main": [
+        [
+          {
+            "node": "Validate payment",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Validate payment": {
+      "main": [
+        [
+          {
+            "node": "Payment valid?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Payment valid?": {
+      "main": [
+        [
+          {
+            "node": "Save payment",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Log rejected payment",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Save payment": {
+      "main": [
+        [
+          {
+            "node": "Update invoice status",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Update invoice status": {
+      "main": [
+        [
+          {
+            "node": "Update order payment status",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Update order payment status": {
+      "main": [
+        [
+          {
+            "node": "Log payment",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Log payment": {
+      "main": [
+        [
+          {
+            "node": "Payment recorded page",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Log rejected payment": {
+      "main": [
+        [
+          {
+            "node": "Payment rejected page",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "availableInMCP": true,
+    "timezone": "America/Santo_Domingo"
+  },
+  "meta": {
+    "aiBuilderAssisted": true,
+    "builderVariant": "mcp"
+  },
+  "nodeGroups": [],
+  "versionId": "3f6a0883-f8f0-49bd-93c3-4df4e269f59e",
+  "activeVersionId": "3f6a0883-f8f0-49bd-93c3-4df4e269f59e",
+  "sourceWorkflowId": null,
+  "versionMetadata": {
+    "name": "Retry Sheets nodes on rate limit",
+    "description": "Updated nodes: Read invoices, Save invoice, Mark order invoiced, Log invoice, Read invoices for payment and 6 more"
+  }
+}

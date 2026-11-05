@@ -1,0 +1,321 @@
+{
+  "updatedAt": "2026-11-05T00:23:14.525Z",
+  "createdAt": "2026-11-05T00:11:42.873Z",
+  "id": "tKiNnkNq2V6IAbS3",
+  "name": "Demo Traders - Seed Data",
+  "description": null,
+  "active": false,
+  "isArchived": false,
+  "nodes": [
+    {
+      "id": "6d77566c-8753-480a-97c6-d43e6bc654a1",
+      "name": "Run seed",
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        240,
+        300
+      ],
+      "parameters": {}
+    },
+    {
+      "id": "f4b020bd-0046-4d44-868e-7245aae137df",
+      "name": "Build 50 colmado products",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        540,
+        200
+      ],
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "language": "javaScript",
+        "jsCode": "const sup = 'owner@example.com';\nconst rows = [\n ['RICE-5KG','Arroz selecto 5 kg','Granos','funda',1800,40,10],\n ['OIL-1L','Aceite de cocina 1 L','Aceites','botella',2500,30,8],\n ['SUGAR-2KG','Azúcar 2 kg','Despensa','funda',900,35,10],\n ['FLOUR-2KG','Harina de trigo 2 kg','Despensa','funda',750,25,8],\n ['BEANS-1KG','Habichuelas rojas 1 kg','Granos','funda',1100,30,8],\n ['SPAGH-500G','Espaguetis 500 g','Pastas','paquete',450,50,15],\n ['SALT-1KG','Sal 1 kg','Despensa','paquete',200,40,10],\n ['MILK-1L','Leche UHT 1 L','Lácteos','cartón',650,36,12],\n ['WASH-1KG','Detergente en polvo 1 kg','Limpieza','funda',1250,6,5],\n ['TOMATO-400G','Pasta de tomate 400 g','Enlatados','lata',300,45,12],\n ['BEANS-BLK-1KG','Habichuelas negras 1 kg','Granos','funda',1050,25,8],\n ['LENTIL-1KG','Lentejas 1 kg','Granos','funda',950,20,6],\n ['PIGEON-PEA-1KG','Guandules secos 1 kg','Granos','funda',1000,20,6],\n ['CORN-MEAL-1KG','Harina de maíz 1 kg','Despensa','funda',600,25,8],\n ['OATS-400G','Avena en hojuelas 400 g','Desayuno','paquete',520,25,8],\n ['COFFEE-454G','Café molido 454 g','Desayuno','paquete',1300,30,8],\n ['CHOCO-454G','Chocolate de cacao en barra 454 g','Desayuno','paquete',900,20,6],\n ['BUTTER-227G','Mantequilla 227 g','Lácteos','paquete',700,20,6],\n ['MARGARINE-200G','Margarina 200 g','Lácteos','paquete',350,25,8],\n ['CHEESE-FRY-LB','Queso para freír 1 lb','Lácteos','libra',450,20,6],\n ['SALAMI-LB','Salami dominicano 1 lb','Embutidos','libra',480,25,8],\n ['MORTADELA-LB','Mortadela 1 lb','Embutidos','libra',300,20,6],\n ['EGGS-30','Huevos cartón de 30','Huevos','cartón',1100,24,8],\n ['BREAD-WATER-6','Pan de agua funda 6 uds','Panadería','funda',150,30,10],\n ['SARDINE-125G','Sardinas en lata 125 g','Enlatados','lata',120,60,15],\n ['TUNA-170G','Atún en lata 170 g','Enlatados','lata',250,40,12],\n ['SAUCE-TOM-8OZ','Salsa de tomate 8 oz','Condimentos','frasco',180,40,12],\n ['SAZON-COMP','Sazón completo','Condimentos','frasco',150,40,12],\n ['ADOBO-8OZ','Adobo 8 oz','Condimentos','frasco',200,30,10],\n ['OREGANO-30G','Orégano 30 g','Condimentos','paquete',80,40,10],\n ['GARLIC-LB','Ajo 1 lb','Vegetales','libra',220,25,8],\n ['ONION-LB','Cebolla 1 lb','Vegetales','libra',70,50,15],\n ['TOMATO-LB','Tomate fresco 1 lb','Vegetales','libra',90,40,12],\n ['PLANTAIN-UN','Plátano verde unidad','Víveres','unidad',45,80,20],\n ['YUCA-LB','Yuca 1 lb','Víveres','libra',40,50,15],\n ['YAM-LB','Ñame 1 lb','Víveres','libra',55,40,12],\n ['BANANA-LB','Guineos 1 lb','Frutas','libra',35,50,15],\n ['LEMON-LB','Limón agrio 1 lb','Frutas','libra',60,30,10],\n ['MALTA-355','Malta morena 355 ml','Bebidas','botella',70,72,24],\n ['COLA-2L','Refresco cola 2 L','Bebidas','botella',150,48,12],\n ['JUICE-1L','Jugo de naranja 1 L','Bebidas','cartón',220,30,10],\n ['WATER-5L','Agua purificada 5 L','Bebidas','botella',120,40,12],\n ['BEER-12OZ','Cerveza 12 oz','Bebidas','botella',110,96,24],\n ['ICE-BAG','Hielo funda','Bebidas','funda',60,40,10],\n ['DISH-SOAP-500','Lavaplatos 500 ml','Limpieza','botella',250,30,8],\n ['BLEACH-1L','Cloro 1 L','Limpieza','botella',150,30,8],\n ['TP-4','Papel higiénico 4 rollos','Higiene','paquete',280,35,10],\n ['TRASHBAG-10','Fundas de basura 10 uds','Limpieza','paquete',180,30,8],\n ['SOAP-BAR','Jabón de baño','Higiene','unidad',90,60,15],\n ['TOOTHPASTE-75','Pasta dental 75 ml','Higiene','tubo',200,40,10]\n];\nreturn rows.map(function (r) {\n  return { json: { SKU: r[0], Name: r[1], Category: r[2], Unit: r[3], Price: r[4], Stock: r[5], Reorder_Level: r[6], Supplier_Email: sup } };\n});"
+      },
+      "notes": "Why Code: builds 10 fixed seed rows in one step instead of 10 Set nodes."
+    },
+    {
+      "id": "f7a5b650-0022-4ff6-a386-4067c3a3c6ee",
+      "name": "Upsert products",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        840,
+        200
+      ],
+      "parameters": {
+        "resource": "sheet",
+        "operation": "appendOrUpdate",
+        "documentId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "1uFc0RmztEiY9tcsNGLe0bExBuhJ5Zxjp6j-J7WfYYjc"
+        },
+        "sheetName": {
+          "__rl": true,
+          "mode": "name",
+          "value": "Products"
+        },
+        "columns": {
+          "mappingMode": "autoMapInputData",
+          "value": {},
+          "matchingColumns": [
+            "SKU"
+          ],
+          "schema": [
+            {
+              "id": "SKU",
+              "displayName": "SKU",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Name",
+              "displayName": "Name",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Category",
+              "displayName": "Category",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Unit",
+              "displayName": "Unit",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Price",
+              "displayName": "Price",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "number",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Stock",
+              "displayName": "Stock",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "number",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Reorder_Level",
+              "displayName": "Reorder_Level",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "number",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Supplier_Email",
+              "displayName": "Supplier_Email",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            }
+          ]
+        },
+        "options": {
+          "cellFormat": "RAW"
+        }
+      },
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "uVqG7fQd8cxSfaMU",
+          "name": "order to delivery system"
+        }
+      }
+    },
+    {
+      "id": "3a778d89-eabc-4509-8a8f-acaf4fb88871",
+      "name": "Build 3 riders",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        540,
+        420
+      ],
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "language": "javaScript",
+        "jsCode": "return [\n { json: { Staff_ID: 'S001', Name: 'Rider 1', Role: 'Rider', Phone: '+1-809-555-0101', Vehicle: 'Bike 1', Available: 'Yes' } },\n { json: { Staff_ID: 'S002', Name: 'Rider 2', Role: 'Rider', Phone: '+1-809-555-0102', Vehicle: 'Bike 2', Available: 'Yes' } },\n { json: { Staff_ID: 'S003', Name: 'Rider 3', Role: 'Rider', Phone: '+1-809-555-0103', Vehicle: 'Bike 3', Available: 'Yes' } }\n];"
+      },
+      "notes": "Why Code: three fixed seed rows in one step."
+    },
+    {
+      "id": "7d15c346-3f16-4fe4-b955-8224cb13ee9c",
+      "name": "Upsert riders",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        840,
+        420
+      ],
+      "parameters": {
+        "resource": "sheet",
+        "operation": "appendOrUpdate",
+        "documentId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "1uFc0RmztEiY9tcsNGLe0bExBuhJ5Zxjp6j-J7WfYYjc"
+        },
+        "sheetName": {
+          "__rl": true,
+          "mode": "name",
+          "value": "Staff"
+        },
+        "columns": {
+          "mappingMode": "autoMapInputData",
+          "value": {},
+          "matchingColumns": [
+            "Staff_ID"
+          ],
+          "schema": [
+            {
+              "id": "Staff_ID",
+              "displayName": "Staff_ID",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Name",
+              "displayName": "Name",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Role",
+              "displayName": "Role",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Phone",
+              "displayName": "Phone",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Vehicle",
+              "displayName": "Vehicle",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Available",
+              "displayName": "Available",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            }
+          ]
+        },
+        "options": {
+          "cellFormat": "RAW"
+        }
+      },
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "uVqG7fQd8cxSfaMU",
+          "name": "order to delivery system"
+        }
+      }
+    }
+  ],
+  "connections": {
+    "Run seed": {
+      "main": [
+        [
+          {
+            "node": "Build 50 colmado products",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Build 3 riders",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Build 3 riders": {
+      "main": [
+        [
+          {
+            "node": "Upsert riders",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Build 50 colmado products": {
+      "main": [
+        [
+          {
+            "node": "Upsert products",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "availableInMCP": true,
+    "timezone": "America/Santo_Domingo"
+  },
+  "meta": {
+    "aiBuilderAssisted": true,
+    "builderVariant": "mcp"
+  },
+  "nodeGroups": [],
+  "versionId": "cc653b9a-67e1-4eca-9435-776bf4c8c439",
+  "activeVersionId": null,
+  "sourceWorkflowId": null,
+  "versionMetadata": {
+    "name": "Seed 50 typical colmado products",
+    "description": "Updated nodes: Build 50 colmado products\nConnections: 2 added, 2 removed"
+  }
+}

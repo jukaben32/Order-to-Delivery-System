@@ -1,0 +1,561 @@
+{
+  "updatedAt": "2026-11-05T00:27:04.233Z",
+  "createdAt": "2026-11-05T00:22:44.608Z",
+  "id": "7Cv4l5DnzrPe1Oij",
+  "name": "Demo Traders - Manager Agent",
+  "description": null,
+  "active": false,
+  "isArchived": false,
+  "nodes": [
+    {
+      "id": "d2c5b025-0af2-4d81-ab55-062fbf99775c",
+      "name": "Every night 21:00",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.4,
+      "position": [
+        224,
+        208
+      ],
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "days",
+              "daysInterval": 1,
+              "triggerAtHour": 21,
+              "triggerAtMinute": 0
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "f4562383-5de6-4479-8cd4-14f6eef5391f",
+      "name": "Read orders",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        448,
+        112
+      ],
+      "parameters": {
+        "resource": "sheet",
+        "operation": "read",
+        "documentId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "1uFc0RmztEiY9tcsNGLe0bExBuhJ5Zxjp6j-J7WfYYjc"
+        },
+        "sheetName": {
+          "__rl": true,
+          "mode": "name",
+          "value": "Orders"
+        }
+      },
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "uVqG7fQd8cxSfaMU",
+          "name": "order to delivery system"
+        }
+      },
+      "alwaysOutputData": true,
+      "retryOnFail": true,
+      "maxTries": 5,
+      "waitBetweenTries": 5000
+    },
+    {
+      "id": "968efeb7-a6e0-44f5-950f-1a7cd72dfbbe",
+      "name": "Read products",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        672,
+        112
+      ],
+      "parameters": {
+        "resource": "sheet",
+        "operation": "read",
+        "documentId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "1uFc0RmztEiY9tcsNGLe0bExBuhJ5Zxjp6j-J7WfYYjc"
+        },
+        "sheetName": {
+          "__rl": true,
+          "mode": "name",
+          "value": "Products"
+        }
+      },
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "uVqG7fQd8cxSfaMU",
+          "name": "order to delivery system"
+        }
+      },
+      "executeOnce": true,
+      "alwaysOutputData": true,
+      "retryOnFail": true,
+      "maxTries": 5,
+      "waitBetweenTries": 5000
+    },
+    {
+      "id": "457ff217-2a94-43d2-808b-f2eee0bb32cd",
+      "name": "Read invoices",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        896,
+        112
+      ],
+      "parameters": {
+        "resource": "sheet",
+        "operation": "read",
+        "documentId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "1uFc0RmztEiY9tcsNGLe0bExBuhJ5Zxjp6j-J7WfYYjc"
+        },
+        "sheetName": {
+          "__rl": true,
+          "mode": "name",
+          "value": "Invoices"
+        }
+      },
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "uVqG7fQd8cxSfaMU",
+          "name": "order to delivery system"
+        }
+      },
+      "executeOnce": true,
+      "alwaysOutputData": true,
+      "retryOnFail": true,
+      "maxTries": 5,
+      "waitBetweenTries": 5000
+    },
+    {
+      "id": "9fa094b5-8452-403f-ac06-4c416ede7990",
+      "name": "Read dispatch",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        1120,
+        112
+      ],
+      "parameters": {
+        "resource": "sheet",
+        "operation": "read",
+        "documentId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "1uFc0RmztEiY9tcsNGLe0bExBuhJ5Zxjp6j-J7WfYYjc"
+        },
+        "sheetName": {
+          "__rl": true,
+          "mode": "name",
+          "value": "Dispatch"
+        }
+      },
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "uVqG7fQd8cxSfaMU",
+          "name": "order to delivery system"
+        }
+      },
+      "executeOnce": true,
+      "alwaysOutputData": true,
+      "retryOnFail": true,
+      "maxTries": 5,
+      "waitBetweenTries": 5000
+    },
+    {
+      "id": "d6d1fe06-fae5-4cab-b6d9-30ca4d6779eb",
+      "name": "Compute report numbers",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1344,
+        112
+      ],
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "language": "javaScript",
+        "jsCode": "const DEFAULT_TO = 'owner@example.com';\nconst LATE_MINUTES = 120;\nfunction rows(name) { return $(name).all().map(function (i) { return i.json; }); }\nconst orders = rows('Read orders').filter(function (o) { return o.Order_ID; });\nconst products = rows('Read products').filter(function (p) { return p.SKU; });\nconst invoices = rows('Read invoices').filter(function (i) { return i.Invoice_No; });\nconst dispatch = rows('Read dispatch').filter(function (d) { return d.Dispatch_ID; });\nconst today = $now.toFormat('yyyy-MM-dd');\nconst todays = orders.filter(function (o) { return String(o.Date).slice(0, 10) === today; });\nconst salesToday = todays.reduce(function (s, o) { return s + (Number(o.Total) || 0); }, 0);\nconst lowStock = products.filter(function (p) { return Number(p.Stock) < Number(p.Reorder_Level); }).map(function (p) { return { sku: p.SKU, name: p.Name, stock: Number(p.Stock), reorder_level: Number(p.Reorder_Level) }; });\nconst unpaid = invoices.filter(function (i) { return String(i.Status) !== 'Paid'; }).map(function (i) { return { invoice_no: i.Invoice_No, order_id: i.Order_ID, amount: Number(i.Amount) || 0, due_date: String(i.Due_Date).slice(0, 10), overdue: String(i.Due_Date).slice(0, 10) < today, status: i.Status }; });\nconst unpaidTotal = unpaid.reduce(function (s, i) { return s + i.amount; }, 0);\nconst late = dispatch.filter(function (d) { return String(d.Status) === 'Dispatched'; }).map(function (d) {\n  const t = DateTime.fromFormat(String(d.Dispatched_At), 'yyyy-MM-dd HH:mm:ss', { zone: $now.zoneName });\n  const mins = t.isValid ? Math.round($now.diff(t, 'minutes').minutes) : 0;\n  return { order_id: d.Order_ID, rider: d.Rider, minutes_out: mins };\n}).filter(function (d) { return d.minutes_out > LATE_MINUTES; });\nconst waiting = orders.filter(function (o) { return String(o.Status) === 'Waiting for rider'; }).map(function (o) { return o.Order_ID; });\nlet recipient = DEFAULT_TO;\ntry { recipient = $('Recipient (form)').first().json.recipient || DEFAULT_TO; } catch (e) { recipient = DEFAULT_TO; }\nconst report = { date: today, orders_today: todays.length, sales_today: salesToday, low_stock: lowStock, unpaid_invoices: unpaid, unpaid_total: unpaidTotal, late_deliveries: late, late_after_minutes: LATE_MINUTES, orders_waiting_for_rider: waiting, currency: 'RD$' };\nreturn [{ json: { recipient: recipient, subject: 'Demo Traders - Daily report ' + today, report: report } }];"
+      },
+      "notes": "Why Code: ALL numbers in the owner report are computed here (sales today, low stock, unpaid invoices, late deliveries). The AI only turns these numbers into words."
+    },
+    {
+      "id": "29b404a9-48c1-4392-8b2e-49d3981bfe75",
+      "name": "Report writer",
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3.1,
+      "position": [
+        1568,
+        112
+      ],
+      "parameters": {
+        "promptType": "define",
+        "text": "=Write the owner report email from this JSON:\n{{ JSON.stringify($json.report) }}",
+        "options": {
+          "systemMessage": "You write the daily report email for the owner of Demo Traders, a grocery shop. Use ONLY the numbers and names in the JSON you receive. Never calculate, estimate or invent any number. Currency is RD$.\n\nWrite in Spanish, plain text (no markdown symbols), short and clear, with these sections: Ventas de hoy (orders and sales), Stock bajo (each product with its stock and minimum, or say there is none), Facturas sin pagar (count, total, and which ones are overdue), Entregas tardías y pedidos en espera (or say there are none). Start with \"Hola,\" and end with \"Demo Traders\". Do not write a subject line.",
+          "maxIterations": 3
+        }
+      }
+    },
+    {
+      "id": "defa179f-59c1-44e9-9ecc-70e7f695d88c",
+      "name": "Claude (Manager)",
+      "type": "@n8n/n8n-nodes-langchain.lmChatAnthropic",
+      "typeVersion": 1.6,
+      "position": [
+        1648,
+        336
+      ],
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "mode": "list",
+          "value": "claude-sonnet-5-5",
+          "cachedResultName": "Claude Sonnet 5.5"
+        },
+        "options": {
+          "maxTokensToSample": 1200
+        }
+      },
+      "credentials": {
+        "anthropicApi": {
+          "id": "pu1mRjJVOc4NZZMx",
+          "name": "Anthropic account"
+        }
+      }
+    },
+    {
+      "id": "4adb63e4-17ab-4feb-9043-1da3bf010682",
+      "name": "Email owner report",
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.2,
+      "position": [
+        1920,
+        112
+      ],
+      "parameters": {
+        "resource": "message",
+        "operation": "send",
+        "sendTo": "={{ $(\"Compute report numbers\").first().json.recipient }}",
+        "subject": "={{ $(\"Compute report numbers\").first().json.subject }}",
+        "emailType": "text",
+        "message": "={{ $json.output }}",
+        "options": {
+          "appendAttribution": false
+        }
+      },
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "oOJ0vvQfmwr3MpT0",
+          "name": "Demo Traders Gmail"
+        }
+      },
+      "webhookId": "515de7d9-cd5c-4472-b969-9b9fe3217142"
+    },
+    {
+      "id": "883df707-bfb8-444e-a23e-656acbccfcf1",
+      "name": "Log report",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        2144,
+        112
+      ],
+      "parameters": {
+        "resource": "sheet",
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "1uFc0RmztEiY9tcsNGLe0bExBuhJ5Zxjp6j-J7WfYYjc"
+        },
+        "sheetName": {
+          "__rl": true,
+          "mode": "name",
+          "value": "Activity_Log"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Time": "={{ $now.toFormat(\"yyyy-MM-dd HH:mm:ss\") }}",
+            "Agent": "Manager",
+            "Action": "report_sent",
+            "Ref_ID": "={{ $(\"Compute report numbers\").first().json.report.date }}",
+            "Details": "=Orders today {{ $(\"Compute report numbers\").first().json.report.orders_today }}; sales {{ $(\"Compute report numbers\").first().json.report.sales_today }}; low stock {{ $(\"Compute report numbers\").first().json.report.low_stock.length }}; unpaid {{ $(\"Compute report numbers\").first().json.report.unpaid_invoices.length }}; late {{ $(\"Compute report numbers\").first().json.report.late_deliveries.length }}"
+          },
+          "schema": [
+            {
+              "id": "Time",
+              "displayName": "Time",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Agent",
+              "displayName": "Agent",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Action",
+              "displayName": "Action",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Ref_ID",
+              "displayName": "Ref_ID",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Details",
+              "displayName": "Details",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            }
+          ]
+        },
+        "options": {
+          "cellFormat": "RAW"
+        }
+      },
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "uVqG7fQd8cxSfaMU",
+          "name": "order to delivery system"
+        }
+      },
+      "retryOnFail": true,
+      "maxTries": 5,
+      "waitBetweenTries": 5000
+    },
+    {
+      "id": "7a86423b-7ae8-4e6d-b1a1-7c566d4eb6ed",
+      "name": "Send report now form",
+      "type": "n8n-nodes-base.formTrigger",
+      "typeVersion": 2.6,
+      "position": [
+        0,
+        16
+      ],
+      "parameters": {
+        "authentication": "basicAuth",
+        "formTitle": "Send report now",
+        "formDescription": "Owner only. Sends today's report by email right away. Leave the email empty to use the default owner address.",
+        "formFields": {
+          "values": [
+            {
+              "fieldLabel": "Email",
+              "fieldType": "email",
+              "placeholder": "owner@example.com",
+              "requiredField": false
+            }
+          ]
+        },
+        "responseMode": "onReceived",
+        "options": {
+          "appendAttribution": false,
+          "path": "demo-traders-send-report",
+          "respondWithOptions": {
+            "values": {
+              "respondWith": "text",
+              "formSubmittedText": "Report requested. It will arrive by email in about a minute."
+            }
+          }
+        }
+      },
+      "webhookId": "5257363a-766b-4f96-bec2-a62daa4cf877",
+      "credentials": {
+        "httpBasicAuth": {
+          "id": "FKw937EGT3VSfiqE",
+          "name": "Demo Traders Forms"
+        }
+      }
+    },
+    {
+      "id": "c84c9727-32c2-4a51-b6bf-b2dc411b7c9a",
+      "name": "Recipient (form)",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.5,
+      "position": [
+        224,
+        16
+      ],
+      "parameters": {
+        "mode": "manual",
+        "assignments": {
+          "assignments": [
+            {
+              "id": "rf1",
+              "name": "recipient",
+              "value": "={{ $json.Email || \"owner@example.com\" }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      }
+    }
+  ],
+  "connections": {
+    "Every night 21:00": {
+      "main": [
+        [
+          {
+            "node": "Read orders",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Read orders": {
+      "main": [
+        [
+          {
+            "node": "Read products",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Read products": {
+      "main": [
+        [
+          {
+            "node": "Read invoices",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Read invoices": {
+      "main": [
+        [
+          {
+            "node": "Read dispatch",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Read dispatch": {
+      "main": [
+        [
+          {
+            "node": "Compute report numbers",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Compute report numbers": {
+      "main": [
+        [
+          {
+            "node": "Report writer",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Report writer": {
+      "main": [
+        [
+          {
+            "node": "Email owner report",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Claude (Manager)": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Report writer",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Email owner report": {
+      "main": [
+        [
+          {
+            "node": "Log report",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send report now form": {
+      "main": [
+        [
+          {
+            "node": "Recipient (form)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Recipient (form)": {
+      "main": [
+        [
+          {
+            "node": "Read orders",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "availableInMCP": true,
+    "timezone": "America/Santo_Domingo"
+  },
+  "meta": {
+    "aiBuilderAssisted": true,
+    "builderVariant": "mcp"
+  },
+  "nodeGroups": [],
+  "versionId": "251da7e9-79bd-40ee-b0b0-48caad12c69f",
+  "activeVersionId": "251da7e9-79bd-40ee-b0b0-48caad12c69f",
+  "sourceWorkflowId": null,
+  "versionMetadata": {
+    "name": "Retry Sheets nodes on rate limit",
+    "description": "Updated nodes: Read orders, Read products, Read invoices, Read dispatch, Log report"
+  }
+}

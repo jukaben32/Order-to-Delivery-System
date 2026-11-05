@@ -1,0 +1,14 @@
+# Secretos y credenciales: nunca se suben
+.env
+*.env
+credentials*.json
+client_secret*.json
+*.pem
+*.key
+
+# Exportaciones locales de prueba
+tmp/
+*.log
+node_modules/
+.DS_Store
+Thumbs.db

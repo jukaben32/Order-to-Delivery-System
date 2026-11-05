@@ -1,0 +1,553 @@
+{
+  "updatedAt": "2026-11-05T00:26:58.985Z",
+  "createdAt": "2026-11-05T00:15:17.529Z",
+  "id": "fGGKvzd1Fj1g1eXZ",
+  "name": "Demo Traders - Inventory",
+  "description": null,
+  "active": false,
+  "isArchived": false,
+  "nodes": [
+    {
+      "id": "5eb9a5bf-3328-43ed-ba4c-2cc341a6d397",
+      "name": "Inventory trigger",
+      "type": "n8n-nodes-base.executeWorkflowTrigger",
+      "typeVersion": 1.3,
+      "position": [
+        240,
+        300
+      ],
+      "parameters": {
+        "inputSource": "passthrough"
+      }
+    },
+    {
+      "id": "5a3b5306-f90d-418f-8914-552a323b2635",
+      "name": "Read products",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        480,
+        300
+      ],
+      "parameters": {
+        "resource": "sheet",
+        "operation": "read",
+        "documentId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "1uFc0RmztEiY9tcsNGLe0bExBuhJ5Zxjp6j-J7WfYYjc"
+        },
+        "sheetName": {
+          "__rl": true,
+          "mode": "name",
+          "value": "Products"
+        }
+      },
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "uVqG7fQd8cxSfaMU",
+          "name": "order to delivery system"
+        }
+      },
+      "retryOnFail": true,
+      "maxTries": 5,
+      "waitBetweenTries": 5000
+    },
+    {
+      "id": "671e3fb4-112d-4771-86ca-8d1f173cd62a",
+      "name": "Compute new stock",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        720,
+        300
+      ],
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "language": "javaScript",
+        "jsCode": "const input = $('Inventory trigger').first().json;\nconst items = input.items || [];\nconst products = $input.all().map(function (i) { return i.json; });\nconst out = [];\nitems.forEach(function (it) {\n  const p = products.find(function (x) { return String(x.SKU).trim() === String(it.sku).trim(); });\n  if (!p) { return; }\n  const qty = Number(it.qty) || 0;\n  const stock = Number(p.Stock) || 0;\n  const level = Number(p.Reorder_Level) || 0;\n  const newStock = stock - qty;\n  out.push({ json: { order_id: input.order_id, sku: String(p.SKU), name: p.Name, qty: qty, old_stock: stock, new_stock: newStock, reorder_level: level, supplier_email: p.Supplier_Email, low: newStock < level, pr_qty: 4 * level } });\n});\nreturn out;"
+      },
+      "notes": "Why Code: matches ordered SKUs to product rows and does the stock subtraction in plain JS. Sheets often returns numbers as text, so values are converted with Number()."
+    },
+    {
+      "id": "19ae046d-4d2d-4027-9cc9-c6b5bb55f551",
+      "name": "Update stock",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        960,
+        300
+      ],
+      "parameters": {
+        "resource": "sheet",
+        "operation": "update",
+        "documentId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "1uFc0RmztEiY9tcsNGLe0bExBuhJ5Zxjp6j-J7WfYYjc"
+        },
+        "sheetName": {
+          "__rl": true,
+          "mode": "name",
+          "value": "Products"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "SKU": "={{ $json.sku }}",
+            "Stock": "={{ $json.new_stock }}"
+          },
+          "matchingColumns": [
+            "SKU"
+          ],
+          "schema": [
+            {
+              "id": "SKU",
+              "displayName": "SKU",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Stock",
+              "displayName": "Stock",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "number",
+              "canBeUsedToMatch": false
+            }
+          ]
+        },
+        "options": {
+          "cellFormat": "RAW"
+        }
+      },
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "uVqG7fQd8cxSfaMU",
+          "name": "order to delivery system"
+        }
+      },
+      "retryOnFail": true,
+      "maxTries": 5,
+      "waitBetweenTries": 5000
+    },
+    {
+      "id": "30c58f04-15d4-45bf-9b3e-1caf1e0e270f",
+      "name": "Build inventory log",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1200,
+        300
+      ],
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "language": "javaScript",
+        "jsCode": "const rows = $('Compute new stock').all().map(function (i) { return i.json; });\nconst details = rows.map(function (r) { return r.sku + ': ' + r.old_stock + ' -> ' + r.new_stock; }).join('; ');\nreturn [{ json: { Time: $now.toFormat('yyyy-MM-dd HH:mm:ss'), Agent: 'Inventory', Action: 'stock_updated', Ref_ID: rows.length ? rows[0].order_id : '', Details: details } }];"
+      },
+      "notes": "Why Code: collapses N stock updates into one log row."
+    },
+    {
+      "id": "d54eab26-4c30-44a2-b2f7-71046c694408",
+      "name": "Log stock update",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        1440,
+        300
+      ],
+      "parameters": {
+        "resource": "sheet",
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "1uFc0RmztEiY9tcsNGLe0bExBuhJ5Zxjp6j-J7WfYYjc"
+        },
+        "sheetName": {
+          "__rl": true,
+          "mode": "name",
+          "value": "Activity_Log"
+        },
+        "columns": {
+          "mappingMode": "autoMapInputData",
+          "value": {}
+        },
+        "options": {
+          "cellFormat": "RAW"
+        }
+      },
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "uVqG7fQd8cxSfaMU",
+          "name": "order to delivery system"
+        }
+      },
+      "retryOnFail": true,
+      "maxTries": 5,
+      "waitBetweenTries": 5000
+    },
+    {
+      "id": "e19cb497-c73b-472f-8285-966e8c9a21a1",
+      "name": "Low stock items",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1680,
+        300
+      ],
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "language": "javaScript",
+        "jsCode": "const rows = $('Compute new stock').all().map(function (i) { return i.json; }).filter(function (r) { return r.low; });\nconst stamp = $now.toFormat('yyyyMMddHHmmss');\nreturn rows.map(function (r, idx) {\n  return { json: { PR_ID: 'PR-' + stamp + '-' + (idx + 1), Date: $now.toFormat('yyyy-MM-dd'), SKU: r.sku, Qty: r.pr_qty, Supplier_Email: r.supplier_email, Status: 'Requested', name: r.name, new_stock: r.new_stock, reorder_level: r.reorder_level, order_id: r.order_id } };\n});"
+      },
+      "notes": "Why Code: keeps only items whose new stock is below Reorder_Level and sizes the order at 4 x Reorder_Level. Returns 0 items when nothing is low, so the chain simply stops."
+    },
+    {
+      "id": "e9a8be57-81c3-47e8-bdea-6ec5c05f5228",
+      "name": "Create purchase request",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        1920,
+        300
+      ],
+      "parameters": {
+        "resource": "sheet",
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "1uFc0RmztEiY9tcsNGLe0bExBuhJ5Zxjp6j-J7WfYYjc"
+        },
+        "sheetName": {
+          "__rl": true,
+          "mode": "name",
+          "value": "Purchase_Requests"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "PR_ID": "={{ $json.PR_ID }}",
+            "Date": "={{ $json.Date }}",
+            "SKU": "={{ $json.SKU }}",
+            "Qty": "={{ $json.Qty }}",
+            "Supplier_Email": "={{ $json.Supplier_Email }}",
+            "Status": "={{ $json.Status }}"
+          },
+          "schema": [
+            {
+              "id": "PR_ID",
+              "displayName": "PR_ID",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Date",
+              "displayName": "Date",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "SKU",
+              "displayName": "SKU",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Qty",
+              "displayName": "Qty",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Supplier_Email",
+              "displayName": "Supplier_Email",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Status",
+              "displayName": "Status",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            }
+          ]
+        },
+        "options": {
+          "cellFormat": "RAW"
+        }
+      },
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "uVqG7fQd8cxSfaMU",
+          "name": "order to delivery system"
+        }
+      },
+      "retryOnFail": true,
+      "maxTries": 5,
+      "waitBetweenTries": 5000
+    },
+    {
+      "id": "6c0b42fa-9903-4039-9095-040297aa5268",
+      "name": "Email supplier",
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.2,
+      "position": [
+        2160,
+        300
+      ],
+      "parameters": {
+        "resource": "message",
+        "operation": "send",
+        "sendTo": "={{ $(\"Low stock items\").item.json.Supplier_Email }}",
+        "subject": "=Purchase request {{ $(\"Low stock items\").item.json.PR_ID }} - {{ $(\"Low stock items\").item.json.name }}",
+        "emailType": "text",
+        "message": "=Hello,\n\nDemo Traders needs to restock {{ $(\"Low stock items\").item.json.name }} (SKU {{ $(\"Low stock items\").item.json.SKU }}).\n\nQuantity requested: {{ $(\"Low stock items\").item.json.Qty }}\nPurchase request: {{ $(\"Low stock items\").item.json.PR_ID }}\n\nPlease confirm availability and delivery date.\n\nThank you,\nDemo Traders",
+        "options": {
+          "appendAttribution": false
+        }
+      },
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "oOJ0vvQfmwr3MpT0",
+          "name": "Demo Traders Gmail"
+        }
+      },
+      "webhookId": "298a33d7-0686-4e9f-aefd-ccb7a5615265"
+    },
+    {
+      "id": "0996207d-8bc7-409d-b2dc-e9d5c0594ea1",
+      "name": "Log purchase request",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        2400,
+        300
+      ],
+      "parameters": {
+        "resource": "sheet",
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "1uFc0RmztEiY9tcsNGLe0bExBuhJ5Zxjp6j-J7WfYYjc"
+        },
+        "sheetName": {
+          "__rl": true,
+          "mode": "name",
+          "value": "Activity_Log"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Time": "={{ $now.toFormat(\"yyyy-MM-dd HH:mm:ss\") }}",
+            "Agent": "Inventory",
+            "Action": "purchase_request_created",
+            "Ref_ID": "={{ $(\"Low stock items\").item.json.PR_ID }}",
+            "Details": "={{ $(\"Low stock items\").item.json.SKU }} qty {{ $(\"Low stock items\").item.json.Qty }}; stock {{ $(\"Low stock items\").item.json.new_stock }} below reorder level {{ $(\"Low stock items\").item.json.reorder_level }}; supplier emailed"
+          },
+          "schema": [
+            {
+              "id": "Time",
+              "displayName": "Time",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Agent",
+              "displayName": "Agent",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Action",
+              "displayName": "Action",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Ref_ID",
+              "displayName": "Ref_ID",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Details",
+              "displayName": "Details",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            }
+          ]
+        },
+        "options": {
+          "cellFormat": "RAW"
+        }
+      },
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "uVqG7fQd8cxSfaMU",
+          "name": "order to delivery system"
+        }
+      },
+      "retryOnFail": true,
+      "maxTries": 5,
+      "waitBetweenTries": 5000
+    }
+  ],
+  "connections": {
+    "Inventory trigger": {
+      "main": [
+        [
+          {
+            "node": "Read products",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Read products": {
+      "main": [
+        [
+          {
+            "node": "Compute new stock",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Compute new stock": {
+      "main": [
+        [
+          {
+            "node": "Update stock",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Update stock": {
+      "main": [
+        [
+          {
+            "node": "Build inventory log",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Build inventory log": {
+      "main": [
+        [
+          {
+            "node": "Log stock update",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Log stock update": {
+      "main": [
+        [
+          {
+            "node": "Low stock items",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Low stock items": {
+      "main": [
+        [
+          {
+            "node": "Create purchase request",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create purchase request": {
+      "main": [
+        [
+          {
+            "node": "Email supplier",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Email supplier": {
+      "main": [
+        [
+          {
+            "node": "Log purchase request",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "availableInMCP": true,
+    "timezone": "America/Santo_Domingo"
+  },
+  "meta": {
+    "aiBuilderAssisted": true,
+    "builderVariant": "mcp"
+  },
+  "nodeGroups": [],
+  "versionId": "dfac900e-b6b7-4cc3-8f6a-fd994e3b8f40",
+  "activeVersionId": "dfac900e-b6b7-4cc3-8f6a-fd994e3b8f40",
+  "sourceWorkflowId": null,
+  "versionMetadata": {
+    "name": "Retry Sheets nodes on rate limit",
+    "description": "Updated nodes: Read products, Update stock, Log stock update, Create purchase request, Log purchase request"
+  }
+}

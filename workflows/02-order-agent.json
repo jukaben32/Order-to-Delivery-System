@@ -1,0 +1,1217 @@
+{
+  "updatedAt": "2026-11-05T00:27:03.121Z",
+  "createdAt": "2026-11-05T00:21:25.863Z",
+  "id": "2TPOB7F9YDmeE15I",
+  "name": "Demo Traders - Order Agent",
+  "description": null,
+  "active": false,
+  "isArchived": false,
+  "nodes": [
+    {
+      "id": "6963f0de-d792-4591-96b9-8feab59dc2f8",
+      "name": "Order agent trigger",
+      "type": "n8n-nodes-base.executeWorkflowTrigger",
+      "typeVersion": 1.3,
+      "position": [
+        0,
+        112
+      ],
+      "parameters": {
+        "inputSource": "workflowInputs",
+        "workflowInputs": {
+          "values": [
+            {
+              "name": "request",
+              "type": "string"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "818984cd-82cd-4cdc-9932-f812fad1f50c",
+      "name": "Read catalog",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        224,
+        112
+      ],
+      "parameters": {
+        "resource": "sheet",
+        "operation": "read",
+        "documentId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "1uFc0RmztEiY9tcsNGLe0bExBuhJ5Zxjp6j-J7WfYYjc"
+        },
+        "sheetName": {
+          "__rl": true,
+          "mode": "name",
+          "value": "Products"
+        }
+      },
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "uVqG7fQd8cxSfaMU",
+          "name": "order to delivery system"
+        }
+      },
+      "retryOnFail": true,
+      "maxTries": 5,
+      "waitBetweenTries": 5000
+    },
+    {
+      "id": "fc62e6c0-10e7-4312-bfb4-ab8c48cce68b",
+      "name": "Build catalog text",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        448,
+        112
+      ],
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "language": "javaScript",
+        "jsCode": "const request = $('Order agent trigger').first().json.request;\nconst lines = $input.all().map(function (i) { const p = i.json; return p.SKU + ' | ' + p.Name + ' | ' + p.Unit + ' | in stock: ' + p.Stock; });\nreturn [{ json: { request: request, catalog: lines.join('\\n') } }];"
+      },
+      "notes": "Why Code: folds the catalog rows into ONE item so the AI agent runs once. The text has NO prices on purpose: the AI never sees or handles money."
+    },
+    {
+      "id": "ca20b3c3-a598-443f-865c-56c2adf3563f",
+      "name": "Order extractor",
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3.1,
+      "position": [
+        672,
+        112
+      ],
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ $json.request }}",
+        "hasOutputParser": true,
+        "options": {
+          "systemMessage": "=You are the Order Agent of Demo Traders, a grocery shop. You turn the text you receive into a structured order. You ONLY understand words. You NEVER calculate money and NEVER say or guess any price or total: code does that after you.\n\nCATALOG (SKU | name | unit | stock). Only these products can be ordered:\n{{ $json.catalog }}\n\nRULES\n- Match what the customer asks for to the catalog by name (Spanish or English, singular or plural). Put the exact SKU from the catalog in items[].sku and a whole-number qty.\n- If a product is not in the catalog, leave it out and say so in reply.\n- Customer data needed: name, phone, email and delivery address (city if given). Copy them exactly as written; never invent them. Leave a field empty if it is missing.\n- ready = true only when there is at least one valid item AND name, phone, email and address are all present.\n- confirmed = true ONLY if the text contains the exact line CUSTOMER CONFIRMED: YES. Otherwise false.\n- reply = a short message in the customer language asking only for what is missing or unclear. Empty string if nothing is missing.\n- language = \"es\" if the customer writes Spanish, \"en\" if English.\n- Return only the structured output."
+        }
+      }
+    },
+    {
+      "id": "a8d11175-fbed-49f7-a8fb-850a2e1966b0",
+      "name": "Claude (Order)",
+      "type": "@n8n/n8n-nodes-langchain.lmChatAnthropic",
+      "typeVersion": 1.6,
+      "position": [
+        688,
+        336
+      ],
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "mode": "list",
+          "value": "claude-sonnet-5-5",
+          "cachedResultName": "Claude Sonnet 5.5"
+        },
+        "options": {
+          "maxTokensToSample": 1500
+        }
+      },
+      "credentials": {
+        "anthropicApi": {
+          "id": "pu1mRjJVOc4NZZMx",
+          "name": "Anthropic account"
+        }
+      }
+    },
+    {
+      "id": "660ceece-1aad-4429-9d51-bdde4336abe7",
+      "name": "Order output parser",
+      "type": "@n8n/n8n-nodes-langchain.outputParserStructured",
+      "typeVersion": 1.3,
+      "position": [
+        816,
+        336
+      ],
+      "parameters": {
+        "schemaType": "fromJson",
+        "jsonSchemaExample": "{ \"reply\": \"short message to the customer if something is missing or unclear, otherwise empty\", \"language\": \"es\", \"ready\": false, \"confirmed\": false, \"customer\": { \"name\": \"\", \"phone\": \"\", \"email\": \"\", \"address\": \"\", \"city\": \"\" }, \"items\": [ { \"sku\": \"RICE-5KG\", \"qty\": 2 } ] }"
+      }
+    },
+    {
+      "id": "92e61414-2a58-4005-b180-1819c43c5c9e",
+      "name": "Price order",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1024,
+        112
+      ],
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "language": "javaScript",
+        "jsCode": "const raw = ($json.output && typeof $json.output === 'object') ? $json.output : $json;\nconst request = String($('Order agent trigger').first().json.request || '');\nconst products = $('Read catalog').all().map(function (i) { return i.json; });\nconst en = String(raw.language || 'es').toLowerCase().indexOf('en') === 0;\nfunction money(n) { return 'RD$ ' + Number(n).toLocaleString('en-US'); }\nconst c = raw.customer || {};\nconst customer = { name: String(c.name || '').trim(), phone: String(c.phone || '').trim(), email: String(c.email || '').trim().toLowerCase(), address: String(c.address || '').trim(), city: String(c.city || '').trim() };\nconst merged = {};\n(raw.items || []).forEach(function (it) {\n  const sku = String(it.sku || '').trim();\n  const qty = Math.round(Number(it.qty));\n  if (!sku || !(qty > 0)) { return; }\n  merged[sku] = (merged[sku] || 0) + qty;\n});\nconst errors = [];\nconst items = [];\nconst lines = [];\nlet subtotal = 0;\nObject.keys(merged).forEach(function (sku) {\n  const p = products.find(function (x) { return String(x.SKU) === sku; });\n  const qty = merged[sku];\n  if (!p) { errors.push((en ? 'Unknown product: ' : 'Producto no encontrado: ') + sku); return; }\n  const stock = Number(p.Stock) || 0;\n  if (qty > stock) { errors.push((en ? 'Not enough stock of ' : 'No hay suficiente existencia de ') + p.Name + ' (' + stock + ')'); return; }\n  const price = Number(p.Price) || 0;\n  const lineTotal = price * qty;\n  subtotal += lineTotal;\n  items.push({ sku: sku, qty: qty, name: p.Name, price: price, line_total: lineTotal });\n  lines.push('- ' + qty + ' x ' + p.Name + ' = ' + money(lineTotal));\n});\nconst discount = 0;\nconst total = subtotal - discount;\nconst missing = [];\nif (!customer.name) { missing.push(en ? 'name' : 'nombre'); }\nif (!customer.phone) { missing.push(en ? 'phone' : 'teléfono'); }\nif (!/^[^@\\s]+@[^@\\s]+\\.[^@\\s]+$/.test(customer.email)) { missing.push(en ? 'email' : 'correo'); }\nif (!customer.address) { missing.push(en ? 'delivery address' : 'dirección de entrega'); }\nconst hasItems = items.length > 0;\nconst ready = hasItems && missing.length === 0 && errors.length === 0;\nconst confirmed = Boolean(raw.confirmed) && /CUSTOMER CONFIRMED:\\s*YES/i.test(request);\nconst create = ready && confirmed;\nlet reply = '';\nif (errors.length) { reply = errors.join('\\n') + '\\n' + (en ? 'Please adjust your order.' : 'Por favor ajusta tu pedido.'); }\nelse if (!hasItems) { reply = raw.reply || (en ? 'Which products would you like to order?' : '¿Qué productos deseas pedir?'); }\nelse if (missing.length) { reply = (en ? 'To continue I still need your: ' : 'Para continuar necesito tu: ') + missing.join(', ') + '.'; }\nelse { reply = (en ? 'Order summary:' : 'Resumen de tu pedido:') + '\\n' + lines.join('\\n') + '\\nTotal: ' + money(total) + '\\n' + (en ? 'Delivery to: ' : 'Entrega en: ') + customer.address + '\\n' + (en ? 'Do you confirm the order? Reply YES to confirm.' : '¿Confirmas el pedido? Responde SÍ para confirmar.'); }\nreturn [{ json: { create: create, ready: ready, confirmed: confirmed, lang: en ? 'en' : 'es', errors: errors, missing: missing, items: items, subtotal: subtotal, discount: discount, total: total, customer: customer, reply: reply } }];"
+      },
+      "notes": "Why Code: THIS is where money is calculated. Prices come from the Products sheet, never from the AI. Same input = same total every time. Also checks SKUs and stock, and confirmation needs the exact line CUSTOMER CONFIRMED: YES in the request."
+    },
+    {
+      "id": "4076a677-5e76-4e2a-8f41-e0d33ddf3c05",
+      "name": "Create order?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.4,
+      "position": [
+        1248,
+        112
+      ],
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict"
+          },
+          "conditions": [
+            {
+              "leftValue": "={{ $json.create }}",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        }
+      }
+    },
+    {
+      "id": "9705ae8d-d80d-44bb-a6be-73f9ec61a4a6",
+      "name": "Read customers",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        1472,
+        16
+      ],
+      "parameters": {
+        "resource": "sheet",
+        "operation": "read",
+        "documentId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "1uFc0RmztEiY9tcsNGLe0bExBuhJ5Zxjp6j-J7WfYYjc"
+        },
+        "sheetName": {
+          "__rl": true,
+          "mode": "name",
+          "value": "Customers"
+        }
+      },
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "uVqG7fQd8cxSfaMU",
+          "name": "order to delivery system"
+        }
+      },
+      "alwaysOutputData": true,
+      "retryOnFail": true,
+      "maxTries": 5,
+      "waitBetweenTries": 5000
+    },
+    {
+      "id": "aaab0687-5b66-4251-91ee-bb59e4a407fb",
+      "name": "Read orders",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        1696,
+        16
+      ],
+      "parameters": {
+        "resource": "sheet",
+        "operation": "read",
+        "documentId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "1uFc0RmztEiY9tcsNGLe0bExBuhJ5Zxjp6j-J7WfYYjc"
+        },
+        "sheetName": {
+          "__rl": true,
+          "mode": "name",
+          "value": "Orders"
+        }
+      },
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "uVqG7fQd8cxSfaMU",
+          "name": "order to delivery system"
+        }
+      },
+      "executeOnce": true,
+      "alwaysOutputData": true,
+      "retryOnFail": true,
+      "maxTries": 5,
+      "waitBetweenTries": 5000
+    },
+    {
+      "id": "7e4c7662-0aaa-4399-bb4a-3baa7c6b24e9",
+      "name": "Assign IDs",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1920,
+        16
+      ],
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "language": "javaScript",
+        "jsCode": "const p = $('Price order').first().json;\nconst customers = $('Read customers').all().map(function (i) { return i.json; }).filter(function (c) { return c.Customer_ID; });\nconst orders = $input.all().map(function (i) { return i.json; }).filter(function (o) { return o.Order_ID; });\nfunction digits(s) { return String(s || '').replace(/\\D/g, ''); }\nconst existing = customers.find(function (c) { return (digits(c.Phone) && digits(c.Phone) === digits(p.customer.phone)) || (String(c.Email || '').toLowerCase() === p.customer.email); });\nlet maxC = 1000;\ncustomers.forEach(function (c) { const m = String(c.Customer_ID).match(/^CUS-(\\d+)$/); if (m && Number(m[1]) > maxC) { maxC = Number(m[1]); } });\nlet maxO = 1000;\norders.forEach(function (o) { const m = String(o.Order_ID).match(/^ORD-(\\d+)$/); if (m && Number(m[1]) > maxO) { maxO = Number(m[1]); } });\nconst customerId = existing ? existing.Customer_ID : 'CUS-' + (maxC + 1);\nconst orderId = 'ORD-' + (maxO + 1);\nconst itemsText = p.items.map(function (i) { return i.sku + ' x' + i.qty; }).join('; ');\nreturn [{ json: { order_id: orderId, customer_id: customerId, date: $now.toFormat('yyyy-MM-dd'), items_text: itemsText, customer_row: { Customer_ID: customerId, Name: p.customer.name, Phone: p.customer.phone, Email: p.customer.email, Address: p.customer.address, City: p.customer.city, Created_At: existing && existing.Created_At ? existing.Created_At : $now.toFormat('yyyy-MM-dd HH:mm:ss') } } }];"
+      },
+      "notes": "Why Code: reuses the Customer_ID if the phone or email already exists, otherwise makes the next CUS number; makes the next ORD number (first is ORD-1001). Ignores the empty placeholder row."
+    },
+    {
+      "id": "52a2653e-cc65-4906-9893-1a371be0a7c3",
+      "name": "Save customer",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        2144,
+        16
+      ],
+      "parameters": {
+        "resource": "sheet",
+        "operation": "appendOrUpdate",
+        "documentId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "1uFc0RmztEiY9tcsNGLe0bExBuhJ5Zxjp6j-J7WfYYjc"
+        },
+        "sheetName": {
+          "__rl": true,
+          "mode": "name",
+          "value": "Customers"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Customer_ID": "={{ $json.customer_row.Customer_ID }}",
+            "Name": "={{ $json.customer_row.Name }}",
+            "Phone": "={{ $json.customer_row.Phone }}",
+            "Email": "={{ $json.customer_row.Email }}",
+            "Address": "={{ $json.customer_row.Address }}",
+            "City": "={{ $json.customer_row.City }}",
+            "Created_At": "={{ $json.customer_row.Created_At }}"
+          },
+          "matchingColumns": [
+            "Customer_ID"
+          ],
+          "schema": [
+            {
+              "id": "Customer_ID",
+              "displayName": "Customer_ID",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Name",
+              "displayName": "Name",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": false
+            },
+            {
+              "id": "Phone",
+              "displayName": "Phone",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": false
+            },
+            {
+              "id": "Email",
+              "displayName": "Email",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": false
+            },
+            {
+              "id": "Address",
+              "displayName": "Address",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": false
+            },
+            {
+              "id": "City",
+              "displayName": "City",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": false
+            },
+            {
+              "id": "Created_At",
+              "displayName": "Created_At",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": false
+            }
+          ]
+        },
+        "options": {
+          "cellFormat": "RAW"
+        }
+      },
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "uVqG7fQd8cxSfaMU",
+          "name": "order to delivery system"
+        }
+      },
+      "retryOnFail": true,
+      "maxTries": 5,
+      "waitBetweenTries": 5000
+    },
+    {
+      "id": "1888a638-8d50-48b0-b365-f859ce27f134",
+      "name": "Save order",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        2368,
+        16
+      ],
+      "parameters": {
+        "resource": "sheet",
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "1uFc0RmztEiY9tcsNGLe0bExBuhJ5Zxjp6j-J7WfYYjc"
+        },
+        "sheetName": {
+          "__rl": true,
+          "mode": "name",
+          "value": "Orders"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Order_ID": "={{ $(\"Assign IDs\").first().json.order_id }}",
+            "Date": "={{ $(\"Assign IDs\").first().json.date }}",
+            "Customer_ID": "={{ $(\"Assign IDs\").first().json.customer_id }}",
+            "Items": "={{ $(\"Assign IDs\").first().json.items_text }}",
+            "Subtotal": "={{ $(\"Price order\").first().json.subtotal }}",
+            "Discount": "={{ $(\"Price order\").first().json.discount }}",
+            "Total": "={{ $(\"Price order\").first().json.total }}",
+            "Status": "New",
+            "Payment_Status": "Unpaid",
+            "Channel": "Chat"
+          },
+          "schema": [
+            {
+              "id": "Order_ID",
+              "displayName": "Order_ID",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Date",
+              "displayName": "Date",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Customer_ID",
+              "displayName": "Customer_ID",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Items",
+              "displayName": "Items",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Subtotal",
+              "displayName": "Subtotal",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Discount",
+              "displayName": "Discount",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Total",
+              "displayName": "Total",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Status",
+              "displayName": "Status",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Payment_Status",
+              "displayName": "Payment_Status",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Channel",
+              "displayName": "Channel",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            }
+          ]
+        },
+        "options": {
+          "cellFormat": "RAW"
+        }
+      },
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "uVqG7fQd8cxSfaMU",
+          "name": "order to delivery system"
+        }
+      },
+      "retryOnFail": true,
+      "maxTries": 5,
+      "waitBetweenTries": 5000
+    },
+    {
+      "id": "9ba2900a-afeb-4ab2-8c0b-29eed1f026be",
+      "name": "Log order created",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        2592,
+        16
+      ],
+      "parameters": {
+        "resource": "sheet",
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "1uFc0RmztEiY9tcsNGLe0bExBuhJ5Zxjp6j-J7WfYYjc"
+        },
+        "sheetName": {
+          "__rl": true,
+          "mode": "name",
+          "value": "Activity_Log"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Time": "={{ $now.toFormat(\"yyyy-MM-dd HH:mm:ss\") }}",
+            "Agent": "Order",
+            "Action": "order_created",
+            "Ref_ID": "={{ $(\"Assign IDs\").first().json.order_id }}",
+            "Details": "={{ $(\"Assign IDs\").first().json.items_text }}; total {{ $(\"Price order\").first().json.total }}"
+          },
+          "schema": [
+            {
+              "id": "Time",
+              "displayName": "Time",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Agent",
+              "displayName": "Agent",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Action",
+              "displayName": "Action",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Ref_ID",
+              "displayName": "Ref_ID",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Details",
+              "displayName": "Details",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            }
+          ]
+        },
+        "options": {
+          "cellFormat": "RAW"
+        }
+      },
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "uVqG7fQd8cxSfaMU",
+          "name": "order to delivery system"
+        }
+      },
+      "retryOnFail": true,
+      "maxTries": 5,
+      "waitBetweenTries": 5000
+    },
+    {
+      "id": "bc75c892-4d4a-432d-92b3-0c51dbbbc19f",
+      "name": "Payload for Inventory",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.5,
+      "position": [
+        2816,
+        16
+      ],
+      "parameters": {
+        "mode": "manual",
+        "assignments": {
+          "assignments": [
+            {
+              "id": "i1",
+              "name": "order_id",
+              "value": "={{ $(\"Assign IDs\").first().json.order_id }}",
+              "type": "string"
+            },
+            {
+              "id": "i2",
+              "name": "items",
+              "value": "={{ $(\"Price order\").first().json.items.map(function (i) { return { sku: i.sku, qty: i.qty }; }) }}",
+              "type": "array"
+            }
+          ]
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "764dbe25-5ce2-42ae-8528-f378a4dd51c0",
+      "name": "Call Inventory",
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1.4,
+      "position": [
+        3040,
+        16
+      ],
+      "parameters": {
+        "source": "database",
+        "workflowId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "fGGKvzd1Fj1g1eXZ",
+          "cachedResultName": "Demo Traders - Inventory"
+        },
+        "mode": "once",
+        "options": {
+          "waitForSubWorkflow": true
+        }
+      },
+      "alwaysOutputData": true
+    },
+    {
+      "id": "40996673-543e-47ef-8f18-451c26a844f5",
+      "name": "Payload for Billing",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.5,
+      "position": [
+        3264,
+        16
+      ],
+      "parameters": {
+        "mode": "manual",
+        "assignments": {
+          "assignments": [
+            {
+              "id": "b1",
+              "name": "order_id",
+              "value": "={{ $(\"Assign IDs\").first().json.order_id }}",
+              "type": "string"
+            },
+            {
+              "id": "b2",
+              "name": "order_date",
+              "value": "={{ $(\"Assign IDs\").first().json.date }}",
+              "type": "string"
+            },
+            {
+              "id": "b3",
+              "name": "total",
+              "value": "={{ $(\"Price order\").first().json.total }}",
+              "type": "number"
+            },
+            {
+              "id": "b4",
+              "name": "customer_name",
+              "value": "={{ $(\"Price order\").first().json.customer.name }}",
+              "type": "string"
+            },
+            {
+              "id": "b5",
+              "name": "customer_email",
+              "value": "={{ $(\"Price order\").first().json.customer.email }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "37bfb56e-e3e5-4d47-9cb9-08ff67a30563",
+      "name": "Call Billing",
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1.4,
+      "position": [
+        3488,
+        16
+      ],
+      "parameters": {
+        "source": "database",
+        "workflowId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "rWiEuk09Jwbn2sqb",
+          "cachedResultName": "Demo Traders - Billing"
+        },
+        "mode": "once",
+        "options": {
+          "waitForSubWorkflow": true
+        }
+      },
+      "alwaysOutputData": true
+    },
+    {
+      "id": "205fbf65-fa6e-4b05-870a-cd002c6e25c8",
+      "name": "Payload for Dispatch",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.5,
+      "position": [
+        3712,
+        16
+      ],
+      "parameters": {
+        "mode": "manual",
+        "assignments": {
+          "assignments": [
+            {
+              "id": "p1",
+              "name": "order_id",
+              "value": "={{ $(\"Assign IDs\").first().json.order_id }}",
+              "type": "string"
+            },
+            {
+              "id": "p2",
+              "name": "customer_name",
+              "value": "={{ $(\"Price order\").first().json.customer.name }}",
+              "type": "string"
+            },
+            {
+              "id": "p3",
+              "name": "customer_email",
+              "value": "={{ $(\"Price order\").first().json.customer.email }}",
+              "type": "string"
+            },
+            {
+              "id": "p4",
+              "name": "address",
+              "value": "={{ $(\"Price order\").first().json.customer.address }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "9de5b19d-2efc-4051-9ca8-48dacb86699e",
+      "name": "Call Dispatch",
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1.4,
+      "position": [
+        3936,
+        16
+      ],
+      "parameters": {
+        "source": "database",
+        "workflowId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "NfjlqnvpnWFX7lYa",
+          "cachedResultName": "Demo Traders - Dispatch"
+        },
+        "mode": "once",
+        "options": {
+          "waitForSubWorkflow": true
+        }
+      },
+      "alwaysOutputData": true
+    },
+    {
+      "id": "3e090560-b9c4-42b8-b08c-8c91fdae9326",
+      "name": "Build confirmation",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        4160,
+        16
+      ],
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "language": "javaScript",
+        "jsCode": "const p = $('Price order').first().json;\nconst a = $('Assign IDs').first().json;\nconst inv = $('Call Billing').first().json;\nconst dsp = $('Call Dispatch').first().json;\nfunction money(n) { return 'RD$ ' + Number(n).toLocaleString('en-US'); }\nconst en = p.lang === 'en';\nconst assigned = dsp.dispatch_status === 'assigned';\nconst invoiceText = inv.invoice_no ? (en ? ' Invoice ' + inv.invoice_no + ' was emailed to ' + p.customer.email + ' (due ' + inv.due_date + ').' : ' La factura ' + inv.invoice_no + ' fue enviada a ' + p.customer.email + ' (vence ' + inv.due_date + ').') : '';\nlet deliveryText;\nif (assigned) { deliveryText = en ? ' ' + dsp.rider_name + ' (' + dsp.vehicle + ') is on the way.' : ' ' + dsp.rider_name + ' (' + dsp.vehicle + ') ya va en camino.'; }\nelse { deliveryText = en ? ' All riders are busy right now, so your order is waiting and will leave as soon as one is free.' : ' Ahora mismo todos los repartidores están ocupados; tu pedido está en espera y saldrá en cuanto haya uno libre.'; }\nconst reply = (en ? 'Order confirmed! Order number: ' : '¡Pedido confirmado! Número de pedido: ') + a.order_id + '. Total: ' + money(p.total) + '.' + invoiceText + deliveryText;\nreturn [{ json: { status: 'confirmed', reply: reply, order_id: a.order_id, total: p.total, invoice_no: inv.invoice_no || '', dispatch_status: dsp.dispatch_status || '' } }];"
+      },
+      "notes": "Why Code: builds the final customer message from real results (order number, invoice, rider). Amounts come from the Price order code node."
+    },
+    {
+      "id": "1ec7ad7c-6411-4e74-a147-75b2fddb670b",
+      "name": "Log quote or question",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        1472,
+        208
+      ],
+      "parameters": {
+        "resource": "sheet",
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "1uFc0RmztEiY9tcsNGLe0bExBuhJ5Zxjp6j-J7WfYYjc"
+        },
+        "sheetName": {
+          "__rl": true,
+          "mode": "name",
+          "value": "Activity_Log"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Time": "={{ $now.toFormat(\"yyyy-MM-dd HH:mm:ss\") }}",
+            "Agent": "Order",
+            "Action": "={{ $json.ready ? \"quote_given\" : \"info_requested\" }}",
+            "Ref_ID": "",
+            "Details": "={{ String($json.reply).replace(/\\n/g, \" | \").slice(0, 300) }}"
+          },
+          "schema": [
+            {
+              "id": "Time",
+              "displayName": "Time",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Agent",
+              "displayName": "Agent",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Action",
+              "displayName": "Action",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Ref_ID",
+              "displayName": "Ref_ID",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Details",
+              "displayName": "Details",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            }
+          ]
+        },
+        "options": {
+          "cellFormat": "RAW"
+        }
+      },
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "uVqG7fQd8cxSfaMU",
+          "name": "order to delivery system"
+        }
+      },
+      "retryOnFail": true,
+      "maxTries": 5,
+      "waitBetweenTries": 5000
+    },
+    {
+      "id": "a2b8fd90-d7d8-4d79-8910-f8e8264f3eb2",
+      "name": "Reply (no order yet)",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.5,
+      "position": [
+        1696,
+        208
+      ],
+      "parameters": {
+        "mode": "manual",
+        "assignments": {
+          "assignments": [
+            {
+              "id": "q1",
+              "name": "status",
+              "value": "={{ $(\"Price order\").first().json.ready ? \"quote\" : \"need_info\" }}",
+              "type": "string"
+            },
+            {
+              "id": "q2",
+              "name": "reply",
+              "value": "={{ $(\"Price order\").first().json.reply }}",
+              "type": "string"
+            },
+            {
+              "id": "q3",
+              "name": "total",
+              "value": "={{ $(\"Price order\").first().json.total }}",
+              "type": "number"
+            }
+          ]
+        },
+        "options": {}
+      }
+    }
+  ],
+  "connections": {
+    "Order agent trigger": {
+      "main": [
+        [
+          {
+            "node": "Read catalog",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Read catalog": {
+      "main": [
+        [
+          {
+            "node": "Build catalog text",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Build catalog text": {
+      "main": [
+        [
+          {
+            "node": "Order extractor",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Order extractor": {
+      "main": [
+        [
+          {
+            "node": "Price order",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Claude (Order)": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Order extractor",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Order output parser": {
+      "ai_outputParser": [
+        [
+          {
+            "node": "Order extractor",
+            "type": "ai_outputParser",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Price order": {
+      "main": [
+        [
+          {
+            "node": "Create order?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create order?": {
+      "main": [
+        [
+          {
+            "node": "Read customers",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Log quote or question",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Read customers": {
+      "main": [
+        [
+          {
+            "node": "Read orders",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Read orders": {
+      "main": [
+        [
+          {
+            "node": "Assign IDs",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Assign IDs": {
+      "main": [
+        [
+          {
+            "node": "Save customer",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Save customer": {
+      "main": [
+        [
+          {
+            "node": "Save order",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Save order": {
+      "main": [
+        [
+          {
+            "node": "Log order created",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Log order created": {
+      "main": [
+        [
+          {
+            "node": "Payload for Inventory",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Payload for Inventory": {
+      "main": [
+        [
+          {
+            "node": "Call Inventory",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Call Inventory": {
+      "main": [
+        [
+          {
+            "node": "Payload for Billing",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Payload for Billing": {
+      "main": [
+        [
+          {
+            "node": "Call Billing",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Call Billing": {
+      "main": [
+        [
+          {
+            "node": "Payload for Dispatch",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Payload for Dispatch": {
+      "main": [
+        [
+          {
+            "node": "Call Dispatch",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Call Dispatch": {
+      "main": [
+        [
+          {
+            "node": "Build confirmation",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Log quote or question": {
+      "main": [
+        [
+          {
+            "node": "Reply (no order yet)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "availableInMCP": true,
+    "timezone": "America/Santo_Domingo"
+  },
+  "meta": {
+    "aiBuilderAssisted": true,
+    "builderVariant": "mcp"
+  },
+  "nodeGroups": [],
+  "versionId": "1ee1e6db-4c57-465d-bb04-2462a2301856",
+  "activeVersionId": "1ee1e6db-4c57-465d-bb04-2462a2301856",
+  "sourceWorkflowId": null,
+  "versionMetadata": {
+    "name": "Retry Sheets nodes on rate limit",
+    "description": "Updated nodes: Read catalog, Read customers, Read orders, Save customer, Save order and 2 more"
+  }
+}

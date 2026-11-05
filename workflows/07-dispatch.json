@@ -1,0 +1,1877 @@
+{
+  "updatedAt": "2026-11-05T00:34:06.168Z",
+  "createdAt": "2026-11-05T00:18:49.149Z",
+  "id": "NfjlqnvpnWFX7lYa",
+  "name": "Demo Traders - Dispatch",
+  "description": null,
+  "active": false,
+  "isArchived": false,
+  "nodes": [
+    {
+      "id": "ab98271c-c8df-4432-8bdf-8e92e4e0f4d8",
+      "name": "Dispatch trigger",
+      "type": "n8n-nodes-base.executeWorkflowTrigger",
+      "typeVersion": 1.3,
+      "position": [
+        0,
+        96
+      ],
+      "parameters": {
+        "inputSource": "passthrough"
+      }
+    },
+    {
+      "id": "7261ac15-12a7-43e6-aebd-a7df00af389e",
+      "name": "Read riders",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        224,
+        96
+      ],
+      "parameters": {
+        "resource": "sheet",
+        "operation": "read",
+        "documentId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "1uFc0RmztEiY9tcsNGLe0bExBuhJ5Zxjp6j-J7WfYYjc"
+        },
+        "sheetName": {
+          "__rl": true,
+          "mode": "name",
+          "value": "Staff"
+        }
+      },
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "uVqG7fQd8cxSfaMU",
+          "name": "order to delivery system"
+        }
+      },
+      "retryOnFail": true,
+      "maxTries": 5,
+      "waitBetweenTries": 5000
+    },
+    {
+      "id": "8633f6df-a815-43bd-a853-2f2ba6efe7e4",
+      "name": "Pick first free rider",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        448,
+        96
+      ],
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "language": "javaScript",
+        "jsCode": "const p = $('Dispatch trigger').first().json;\nconst riders = $input.all().map(function (i) { return i.json; });\nconst r = riders.find(function (x) { return String(x.Available || '').trim().toLowerCase() === 'yes' && String(x.Role || 'Rider').trim().toLowerCase() === 'rider'; });\nconst base = { order_id: p.order_id, customer_name: p.customer_name, customer_email: p.customer_email, address: p.address };\nif (!r) { return [{ json: Object.assign({ found: false }, base) }]; }\nreturn [{ json: Object.assign({ found: true, Staff_ID: r.Staff_ID, rider_name: r.Name, vehicle: r.Vehicle, rider_phone: r.Phone }, base) }];"
+      },
+      "notes": "Why Code: picks the first rider whose Available = Yes. Always returns exactly one item (found true/false) so the IF below has a clear answer even when nobody is free."
+    },
+    {
+      "id": "80802a33-d228-4edb-acee-530dd8d36719",
+      "name": "Rider free?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.4,
+      "position": [
+        672,
+        96
+      ],
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict"
+          },
+          "conditions": [
+            {
+              "leftValue": "={{ $json.found }}",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        }
+      }
+    },
+    {
+      "id": "1b0a2cb4-7a16-4fa8-b92a-7b67c548a7bd",
+      "name": "Read dispatch history",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        896,
+        0
+      ],
+      "parameters": {
+        "resource": "sheet",
+        "operation": "read",
+        "documentId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "1uFc0RmztEiY9tcsNGLe0bExBuhJ5Zxjp6j-J7WfYYjc"
+        },
+        "sheetName": {
+          "__rl": true,
+          "mode": "name",
+          "value": "Dispatch"
+        }
+      },
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "uVqG7fQd8cxSfaMU",
+          "name": "order to delivery system"
+        }
+      },
+      "alwaysOutputData": true,
+      "retryOnFail": true,
+      "maxTries": 5,
+      "waitBetweenTries": 5000
+    },
+    {
+      "id": "106742a2-4df9-4068-847b-36b56cd4975a",
+      "name": "Next dispatch number",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1120,
+        0
+      ],
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "language": "javaScript",
+        "jsCode": "const pick = $('Pick first free rider').first().json;\nlet max = 1000;\n$input.all().forEach(function (i) {\n  const m = String(i.json.Dispatch_ID || '').match(/^DSP-(\\d+)$/);\n  if (m && Number(m[1]) > max) { max = Number(m[1]); }\n});\nreturn [{ json: { Dispatch_ID: 'DSP-' + (max + 1), Order_ID: pick.order_id, Rider: pick.rider_name, Vehicle: pick.vehicle, Dispatched_At: $now.toFormat('yyyy-MM-dd HH:mm:ss'), Delivered_At: '', Status: 'Dispatched' } }];"
+      },
+      "notes": "Why Code: finds the highest DSP number in the sheet (ignoring the empty placeholder row) and adds 1."
+    },
+    {
+      "id": "165cc336-bd1f-4dfa-acf8-b6d554e1adcd",
+      "name": "Save dispatch",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        1344,
+        0
+      ],
+      "parameters": {
+        "resource": "sheet",
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "1uFc0RmztEiY9tcsNGLe0bExBuhJ5Zxjp6j-J7WfYYjc"
+        },
+        "sheetName": {
+          "__rl": true,
+          "mode": "name",
+          "value": "Dispatch"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Dispatch_ID": "={{ $json.Dispatch_ID }}",
+            "Order_ID": "={{ $json.Order_ID }}",
+            "Rider": "={{ $json.Rider }}",
+            "Vehicle": "={{ $json.Vehicle }}",
+            "Dispatched_At": "={{ $json.Dispatched_At }}",
+            "Delivered_At": "",
+            "Status": "={{ $json.Status }}"
+          },
+          "schema": [
+            {
+              "id": "Dispatch_ID",
+              "displayName": "Dispatch_ID",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Order_ID",
+              "displayName": "Order_ID",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Rider",
+              "displayName": "Rider",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Vehicle",
+              "displayName": "Vehicle",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Dispatched_At",
+              "displayName": "Dispatched_At",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Delivered_At",
+              "displayName": "Delivered_At",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Status",
+              "displayName": "Status",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            }
+          ]
+        },
+        "options": {
+          "cellFormat": "RAW"
+        }
+      },
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "uVqG7fQd8cxSfaMU",
+          "name": "order to delivery system"
+        }
+      },
+      "retryOnFail": true,
+      "maxTries": 5,
+      "waitBetweenTries": 5000
+    },
+    {
+      "id": "331bdfe8-3c40-44e5-a64a-4ca06951c574",
+      "name": "Set rider busy",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        1568,
+        0
+      ],
+      "parameters": {
+        "resource": "sheet",
+        "operation": "update",
+        "documentId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "1uFc0RmztEiY9tcsNGLe0bExBuhJ5Zxjp6j-J7WfYYjc"
+        },
+        "sheetName": {
+          "__rl": true,
+          "mode": "name",
+          "value": "Staff"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Staff_ID": "={{ $(\"Pick first free rider\").first().json.Staff_ID }}",
+            "Available": "No"
+          },
+          "matchingColumns": [
+            "Staff_ID"
+          ],
+          "schema": [
+            {
+              "id": "Staff_ID",
+              "displayName": "Staff_ID",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Available",
+              "displayName": "Available",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": false
+            }
+          ]
+        },
+        "options": {
+          "cellFormat": "RAW"
+        }
+      },
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "uVqG7fQd8cxSfaMU",
+          "name": "order to delivery system"
+        }
+      },
+      "retryOnFail": true,
+      "maxTries": 5,
+      "waitBetweenTries": 5000
+    },
+    {
+      "id": "6c0fdc33-9f2d-4e70-8723-77c6d719f53a",
+      "name": "Mark order dispatched",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        1792,
+        0
+      ],
+      "parameters": {
+        "resource": "sheet",
+        "operation": "update",
+        "documentId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "1uFc0RmztEiY9tcsNGLe0bExBuhJ5Zxjp6j-J7WfYYjc"
+        },
+        "sheetName": {
+          "__rl": true,
+          "mode": "name",
+          "value": "Orders"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Order_ID": "={{ $(\"Pick first free rider\").first().json.order_id }}",
+            "Status": "Dispatched"
+          },
+          "matchingColumns": [
+            "Order_ID"
+          ],
+          "schema": [
+            {
+              "id": "Order_ID",
+              "displayName": "Order_ID",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Status",
+              "displayName": "Status",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": false
+            }
+          ]
+        },
+        "options": {
+          "cellFormat": "RAW"
+        }
+      },
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "uVqG7fQd8cxSfaMU",
+          "name": "order to delivery system"
+        }
+      },
+      "retryOnFail": true,
+      "maxTries": 5,
+      "waitBetweenTries": 5000
+    },
+    {
+      "id": "fecbb5f7-dd09-4a39-b3a6-b9cc3e9c0b6f",
+      "name": "Email customer on the way",
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.2,
+      "position": [
+        2016,
+        0
+      ],
+      "parameters": {
+        "resource": "message",
+        "operation": "send",
+        "sendTo": "={{ $(\"Pick first free rider\").first().json.customer_email }}",
+        "subject": "=Your order {{ $(\"Pick first free rider\").first().json.order_id }} is on the way",
+        "emailType": "text",
+        "message": "=Hello {{ $(\"Pick first free rider\").first().json.customer_name }},\n\nGood news: your order {{ $(\"Pick first free rider\").first().json.order_id }} is on its way.\n\nRider: {{ $(\"Pick first free rider\").first().json.rider_name }} ({{ $(\"Pick first free rider\").first().json.vehicle }})\nDelivery address: {{ $(\"Pick first free rider\").first().json.address }}\n\nThank you,\nDemo Traders",
+        "options": {
+          "appendAttribution": false
+        }
+      },
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "oOJ0vvQfmwr3MpT0",
+          "name": "Demo Traders Gmail"
+        }
+      },
+      "webhookId": "3156d280-94de-469e-9bf5-620e8c2d5fa3"
+    },
+    {
+      "id": "2d783756-7aea-49dd-890f-575f335d361a",
+      "name": "Log dispatch",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        2240,
+        0
+      ],
+      "parameters": {
+        "resource": "sheet",
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "1uFc0RmztEiY9tcsNGLe0bExBuhJ5Zxjp6j-J7WfYYjc"
+        },
+        "sheetName": {
+          "__rl": true,
+          "mode": "name",
+          "value": "Activity_Log"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Time": "={{ $now.toFormat(\"yyyy-MM-dd HH:mm:ss\") }}",
+            "Agent": "Dispatch",
+            "Action": "order_dispatched",
+            "Ref_ID": "={{ $(\"Pick first free rider\").first().json.order_id }}",
+            "Details": "={{ $(\"Next dispatch number\").first().json.Dispatch_ID }} assigned to {{ $(\"Pick first free rider\").first().json.rider_name }} ({{ $(\"Pick first free rider\").first().json.vehicle }}); customer emailed"
+          },
+          "schema": [
+            {
+              "id": "Time",
+              "displayName": "Time",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Agent",
+              "displayName": "Agent",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Action",
+              "displayName": "Action",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Ref_ID",
+              "displayName": "Ref_ID",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Details",
+              "displayName": "Details",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            }
+          ]
+        },
+        "options": {
+          "cellFormat": "RAW"
+        }
+      },
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "uVqG7fQd8cxSfaMU",
+          "name": "order to delivery system"
+        }
+      },
+      "retryOnFail": true,
+      "maxTries": 5,
+      "waitBetweenTries": 5000
+    },
+    {
+      "id": "b176f7f6-7b39-41d7-988e-c7135f72117b",
+      "name": "Result assigned",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.5,
+      "position": [
+        2464,
+        0
+      ],
+      "parameters": {
+        "mode": "manual",
+        "assignments": {
+          "assignments": [
+            {
+              "id": "d1",
+              "name": "dispatch_status",
+              "value": "assigned",
+              "type": "string"
+            },
+            {
+              "id": "d2",
+              "name": "order_id",
+              "value": "={{ $(\"Pick first free rider\").first().json.order_id }}",
+              "type": "string"
+            },
+            {
+              "id": "d3",
+              "name": "rider_name",
+              "value": "={{ $(\"Pick first free rider\").first().json.rider_name }}",
+              "type": "string"
+            },
+            {
+              "id": "d4",
+              "name": "vehicle",
+              "value": "={{ $(\"Pick first free rider\").first().json.vehicle }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "b917e87a-e2f5-4ff8-9aff-ff0e4532ac3a",
+      "name": "Mark order waiting",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        896,
+        192
+      ],
+      "parameters": {
+        "resource": "sheet",
+        "operation": "update",
+        "documentId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "1uFc0RmztEiY9tcsNGLe0bExBuhJ5Zxjp6j-J7WfYYjc"
+        },
+        "sheetName": {
+          "__rl": true,
+          "mode": "name",
+          "value": "Orders"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Order_ID": "={{ $json.order_id }}",
+            "Status": "Waiting for rider"
+          },
+          "matchingColumns": [
+            "Order_ID"
+          ],
+          "schema": [
+            {
+              "id": "Order_ID",
+              "displayName": "Order_ID",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Status",
+              "displayName": "Status",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": false
+            }
+          ]
+        },
+        "options": {
+          "cellFormat": "RAW"
+        }
+      },
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "uVqG7fQd8cxSfaMU",
+          "name": "order to delivery system"
+        }
+      },
+      "retryOnFail": true,
+      "maxTries": 5,
+      "waitBetweenTries": 5000
+    },
+    {
+      "id": "39d0716c-e0da-41b6-ade5-9af68886decf",
+      "name": "Log no rider free",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        1120,
+        192
+      ],
+      "parameters": {
+        "resource": "sheet",
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "1uFc0RmztEiY9tcsNGLe0bExBuhJ5Zxjp6j-J7WfYYjc"
+        },
+        "sheetName": {
+          "__rl": true,
+          "mode": "name",
+          "value": "Activity_Log"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Time": "={{ $now.toFormat(\"yyyy-MM-dd HH:mm:ss\") }}",
+            "Agent": "Dispatch",
+            "Action": "no_rider_free",
+            "Ref_ID": "={{ $(\"Pick first free rider\").first().json.order_id }}",
+            "Details": "No rider is free. The order is waiting for a rider."
+          },
+          "schema": [
+            {
+              "id": "Time",
+              "displayName": "Time",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Agent",
+              "displayName": "Agent",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Action",
+              "displayName": "Action",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Ref_ID",
+              "displayName": "Ref_ID",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Details",
+              "displayName": "Details",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            }
+          ]
+        },
+        "options": {
+          "cellFormat": "RAW"
+        }
+      },
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "uVqG7fQd8cxSfaMU",
+          "name": "order to delivery system"
+        }
+      },
+      "retryOnFail": true,
+      "maxTries": 5,
+      "waitBetweenTries": 5000
+    },
+    {
+      "id": "833473e2-a9c9-454a-b8a5-dfd107fa191a",
+      "name": "Result waiting",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.5,
+      "position": [
+        1344,
+        192
+      ],
+      "parameters": {
+        "mode": "manual",
+        "assignments": {
+          "assignments": [
+            {
+              "id": "w1",
+              "name": "dispatch_status",
+              "value": "waiting",
+              "type": "string"
+            },
+            {
+              "id": "w2",
+              "name": "order_id",
+              "value": "={{ $(\"Pick first free rider\").first().json.order_id }}",
+              "type": "string"
+            },
+            {
+              "id": "w3",
+              "name": "rider_name",
+              "value": "",
+              "type": "string"
+            },
+            {
+              "id": "w4",
+              "name": "vehicle",
+              "value": "",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "a6e76102-709f-413f-8b2e-49ae9046b656",
+      "name": "Mark delivered form",
+      "type": "n8n-nodes-base.formTrigger",
+      "typeVersion": 2.6,
+      "position": [
+        0,
+        512
+      ],
+      "parameters": {
+        "authentication": "basicAuth",
+        "formTitle": "Mark delivered",
+        "formDescription": "Riders only. Type the order number you just delivered.",
+        "formFields": {
+          "values": [
+            {
+              "fieldLabel": "Order_ID",
+              "fieldType": "text",
+              "placeholder": "ORD-1001",
+              "requiredField": true
+            }
+          ]
+        },
+        "responseMode": "lastNode",
+        "options": {
+          "appendAttribution": false,
+          "path": "demo-traders-mark-delivered"
+        }
+      },
+      "webhookId": "f8c73eed-6832-4d57-886d-7a21e68c313d",
+      "credentials": {
+        "httpBasicAuth": {
+          "id": "FKw937EGT3VSfiqE",
+          "name": "Demo Traders Forms"
+        }
+      }
+    },
+    {
+      "id": "c209d50b-63bb-4880-88bc-521dd06e9046",
+      "name": "Read dispatch for delivery",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        224,
+        512
+      ],
+      "parameters": {
+        "resource": "sheet",
+        "operation": "read",
+        "documentId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "1uFc0RmztEiY9tcsNGLe0bExBuhJ5Zxjp6j-J7WfYYjc"
+        },
+        "sheetName": {
+          "__rl": true,
+          "mode": "name",
+          "value": "Dispatch"
+        }
+      },
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "uVqG7fQd8cxSfaMU",
+          "name": "order to delivery system"
+        }
+      },
+      "alwaysOutputData": true,
+      "retryOnFail": true,
+      "maxTries": 5,
+      "waitBetweenTries": 5000
+    },
+    {
+      "id": "f1974a7c-a773-490f-adf0-fccd41ea6c51",
+      "name": "Read staff for delivery",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        448,
+        512
+      ],
+      "parameters": {
+        "resource": "sheet",
+        "operation": "read",
+        "documentId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "1uFc0RmztEiY9tcsNGLe0bExBuhJ5Zxjp6j-J7WfYYjc"
+        },
+        "sheetName": {
+          "__rl": true,
+          "mode": "name",
+          "value": "Staff"
+        }
+      },
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "uVqG7fQd8cxSfaMU",
+          "name": "order to delivery system"
+        }
+      },
+      "executeOnce": true,
+      "alwaysOutputData": true,
+      "retryOnFail": true,
+      "maxTries": 5,
+      "waitBetweenTries": 5000
+    },
+    {
+      "id": "e86b1fd8-601a-4e69-ae92-db4d87e2379e",
+      "name": "Read orders for delivery",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        672,
+        512
+      ],
+      "parameters": {
+        "resource": "sheet",
+        "operation": "read",
+        "documentId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "1uFc0RmztEiY9tcsNGLe0bExBuhJ5Zxjp6j-J7WfYYjc"
+        },
+        "sheetName": {
+          "__rl": true,
+          "mode": "name",
+          "value": "Orders"
+        }
+      },
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "uVqG7fQd8cxSfaMU",
+          "name": "order to delivery system"
+        }
+      },
+      "executeOnce": true,
+      "alwaysOutputData": true,
+      "retryOnFail": true,
+      "maxTries": 5,
+      "waitBetweenTries": 5000
+    },
+    {
+      "id": "cfcf2f69-7e52-4df8-9a5c-713572271f28",
+      "name": "Read customers for delivery",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        896,
+        512
+      ],
+      "parameters": {
+        "resource": "sheet",
+        "operation": "read",
+        "documentId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "1uFc0RmztEiY9tcsNGLe0bExBuhJ5Zxjp6j-J7WfYYjc"
+        },
+        "sheetName": {
+          "__rl": true,
+          "mode": "name",
+          "value": "Customers"
+        }
+      },
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "uVqG7fQd8cxSfaMU",
+          "name": "order to delivery system"
+        }
+      },
+      "executeOnce": true,
+      "alwaysOutputData": true,
+      "retryOnFail": true,
+      "maxTries": 5,
+      "waitBetweenTries": 5000
+    },
+    {
+      "id": "e77bdaeb-f34f-4226-9665-47085fe6a6f8",
+      "name": "Find delivery",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1120,
+        512
+      ],
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "language": "javaScript",
+        "jsCode": "const form = $('Mark delivered form').first().json;\nconst wanted = String(form.Order_ID || '').trim().toUpperCase();\nconst rows = function (name) { return $(name).all().map(function (i) { return i.json; }); };\nconst d = rows('Read dispatch for delivery').find(function (r) { return String(r.Order_ID || '').toUpperCase() === wanted && String(r.Status) === 'Dispatched'; });\nif (!d) { return [{ json: { ok: false, Order_ID: wanted, message: 'No open delivery was found for ' + wanted + '. Nothing was changed.' } }]; }\nconst staff = rows('Read staff for delivery').find(function (r) { return String(r.Name) === String(d.Rider); });\nconst order = rows('Read orders for delivery').find(function (r) { return String(r.Order_ID) === String(d.Order_ID); });\nconst cust = order ? rows('Read customers for delivery').find(function (r) { return String(r.Customer_ID) === String(order.Customer_ID); }) : null;\nreturn [{ json: { ok: true, Order_ID: d.Order_ID, Dispatch_ID: d.Dispatch_ID, rider_name: d.Rider, Staff_ID: staff ? staff.Staff_ID : '', customer_name: cust ? cust.Name : '', customer_email: cust ? cust.Email : '', delivered_at: $now.toFormat('yyyy-MM-dd HH:mm:ss'), message: 'Order ' + d.Order_ID + ' marked as delivered. ' + d.Rider + ' is available again.' } }];"
+      },
+      "notes": "Why Code: joins four sheets (Dispatch, Staff, Orders, Customers) to find the open delivery for the typed order, the rider to free and the customer to email."
+    },
+    {
+      "id": "c175fd79-f4c0-494c-a451-68c445833bd0",
+      "name": "Delivery found?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.4,
+      "position": [
+        1344,
+        512
+      ],
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict"
+          },
+          "conditions": [
+            {
+              "leftValue": "={{ $json.ok }}",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        }
+      }
+    },
+    {
+      "id": "c49b8779-d51e-490e-83ac-8837efd0aac4",
+      "name": "Mark dispatch delivered",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        1568,
+        416
+      ],
+      "parameters": {
+        "resource": "sheet",
+        "operation": "update",
+        "documentId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "1uFc0RmztEiY9tcsNGLe0bExBuhJ5Zxjp6j-J7WfYYjc"
+        },
+        "sheetName": {
+          "__rl": true,
+          "mode": "name",
+          "value": "Dispatch"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Dispatch_ID": "={{ $json.Dispatch_ID }}",
+            "Delivered_At": "={{ $json.delivered_at }}",
+            "Status": "Delivered"
+          },
+          "matchingColumns": [
+            "Dispatch_ID"
+          ],
+          "schema": [
+            {
+              "id": "Dispatch_ID",
+              "displayName": "Dispatch_ID",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Delivered_At",
+              "displayName": "Delivered_At",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": false
+            },
+            {
+              "id": "Status",
+              "displayName": "Status",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": false
+            }
+          ]
+        },
+        "options": {
+          "cellFormat": "RAW"
+        }
+      },
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "uVqG7fQd8cxSfaMU",
+          "name": "order to delivery system"
+        }
+      },
+      "retryOnFail": true,
+      "maxTries": 5,
+      "waitBetweenTries": 5000
+    },
+    {
+      "id": "74f881b2-5b42-4423-90a6-707ebbba86b6",
+      "name": "Mark order delivered",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        1792,
+        416
+      ],
+      "parameters": {
+        "resource": "sheet",
+        "operation": "update",
+        "documentId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "1uFc0RmztEiY9tcsNGLe0bExBuhJ5Zxjp6j-J7WfYYjc"
+        },
+        "sheetName": {
+          "__rl": true,
+          "mode": "name",
+          "value": "Orders"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Order_ID": "={{ $(\"Find delivery\").first().json.Order_ID }}",
+            "Status": "Delivered"
+          },
+          "matchingColumns": [
+            "Order_ID"
+          ],
+          "schema": [
+            {
+              "id": "Order_ID",
+              "displayName": "Order_ID",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Status",
+              "displayName": "Status",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": false
+            }
+          ]
+        },
+        "options": {
+          "cellFormat": "RAW"
+        }
+      },
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "uVqG7fQd8cxSfaMU",
+          "name": "order to delivery system"
+        }
+      },
+      "retryOnFail": true,
+      "maxTries": 5,
+      "waitBetweenTries": 5000
+    },
+    {
+      "id": "56a5d8c7-765c-4204-a61e-0de51aef4dde",
+      "name": "Set rider available",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        2016,
+        416
+      ],
+      "parameters": {
+        "resource": "sheet",
+        "operation": "update",
+        "documentId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "1uFc0RmztEiY9tcsNGLe0bExBuhJ5Zxjp6j-J7WfYYjc"
+        },
+        "sheetName": {
+          "__rl": true,
+          "mode": "name",
+          "value": "Staff"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Staff_ID": "={{ $(\"Find delivery\").first().json.Staff_ID }}",
+            "Available": "Yes"
+          },
+          "matchingColumns": [
+            "Staff_ID"
+          ],
+          "schema": [
+            {
+              "id": "Staff_ID",
+              "displayName": "Staff_ID",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Available",
+              "displayName": "Available",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": false
+            }
+          ]
+        },
+        "options": {
+          "cellFormat": "RAW"
+        }
+      },
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "uVqG7fQd8cxSfaMU",
+          "name": "order to delivery system"
+        }
+      },
+      "retryOnFail": true,
+      "maxTries": 5,
+      "waitBetweenTries": 5000
+    },
+    {
+      "id": "dce7f597-eb6d-4a9c-9c34-8aafae4fbc47",
+      "name": "Email customer delivered",
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.2,
+      "position": [
+        2240,
+        416
+      ],
+      "parameters": {
+        "resource": "message",
+        "operation": "send",
+        "sendTo": "={{ $(\"Find delivery\").first().json.customer_email }}",
+        "subject": "=Your order {{ $(\"Find delivery\").first().json.Order_ID }} was delivered",
+        "emailType": "text",
+        "message": "=Hello {{ $(\"Find delivery\").first().json.customer_name }},\n\nYour order {{ $(\"Find delivery\").first().json.Order_ID }} has been delivered. Thank you for shopping with Demo Traders!\n\nIf anything is wrong, just reply to this email.\n\nDemo Traders",
+        "options": {
+          "appendAttribution": false
+        }
+      },
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "oOJ0vvQfmwr3MpT0",
+          "name": "Demo Traders Gmail"
+        }
+      },
+      "webhookId": "8f763dc9-46f7-4bbf-ade4-ccb34329261c"
+    },
+    {
+      "id": "76614da3-ddf1-4287-b02b-8469d5a7ea51",
+      "name": "Log delivery",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        2464,
+        416
+      ],
+      "parameters": {
+        "resource": "sheet",
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "1uFc0RmztEiY9tcsNGLe0bExBuhJ5Zxjp6j-J7WfYYjc"
+        },
+        "sheetName": {
+          "__rl": true,
+          "mode": "name",
+          "value": "Activity_Log"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Time": "={{ $now.toFormat(\"yyyy-MM-dd HH:mm:ss\") }}",
+            "Agent": "Dispatch",
+            "Action": "order_delivered",
+            "Ref_ID": "={{ $(\"Find delivery\").first().json.Order_ID }}",
+            "Details": "={{ $(\"Find delivery\").first().json.message }} Customer emailed."
+          },
+          "schema": [
+            {
+              "id": "Time",
+              "displayName": "Time",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Agent",
+              "displayName": "Agent",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Action",
+              "displayName": "Action",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Ref_ID",
+              "displayName": "Ref_ID",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Details",
+              "displayName": "Details",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            }
+          ]
+        },
+        "options": {
+          "cellFormat": "RAW"
+        }
+      },
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "uVqG7fQd8cxSfaMU",
+          "name": "order to delivery system"
+        }
+      },
+      "retryOnFail": true,
+      "maxTries": 5,
+      "waitBetweenTries": 5000
+    },
+    {
+      "id": "a9ade8c0-9a6c-438c-8096-67cb1da68a3b",
+      "name": "Delivered page",
+      "type": "n8n-nodes-base.form",
+      "typeVersion": 2.5,
+      "position": [
+        2688,
+        416
+      ],
+      "parameters": {
+        "operation": "completion",
+        "respondWith": "text",
+        "completionTitle": "Delivery recorded",
+        "completionMessage": "={{ $(\"Find delivery\").first().json.message }}",
+        "options": {
+          "appendAttribution": false
+        }
+      },
+      "webhookId": "0c902a9d-6504-4496-aa73-00988282b2f4"
+    },
+    {
+      "id": "f6ab4d66-827e-4658-beb6-063155bafd61",
+      "name": "Log rejected delivery",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        1568,
+        608
+      ],
+      "parameters": {
+        "resource": "sheet",
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "1uFc0RmztEiY9tcsNGLe0bExBuhJ5Zxjp6j-J7WfYYjc"
+        },
+        "sheetName": {
+          "__rl": true,
+          "mode": "name",
+          "value": "Activity_Log"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Time": "={{ $now.toFormat(\"yyyy-MM-dd HH:mm:ss\") }}",
+            "Agent": "Dispatch",
+            "Action": "delivery_rejected",
+            "Ref_ID": "={{ $json.Order_ID }}",
+            "Details": "={{ $json.message }}"
+          },
+          "schema": [
+            {
+              "id": "Time",
+              "displayName": "Time",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Agent",
+              "displayName": "Agent",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Action",
+              "displayName": "Action",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Ref_ID",
+              "displayName": "Ref_ID",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Details",
+              "displayName": "Details",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            }
+          ]
+        },
+        "options": {
+          "cellFormat": "RAW"
+        }
+      },
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "uVqG7fQd8cxSfaMU",
+          "name": "order to delivery system"
+        }
+      },
+      "retryOnFail": true,
+      "maxTries": 5,
+      "waitBetweenTries": 5000
+    },
+    {
+      "id": "8937d35e-904c-45e8-85b1-cd2dbcb26081",
+      "name": "Delivery not recorded page",
+      "type": "n8n-nodes-base.form",
+      "typeVersion": 2.5,
+      "position": [
+        1792,
+        608
+      ],
+      "parameters": {
+        "operation": "completion",
+        "respondWith": "text",
+        "completionTitle": "Delivery not recorded",
+        "completionMessage": "={{ $(\"Find delivery\").first().json.message }}",
+        "options": {
+          "appendAttribution": false
+        }
+      },
+      "webhookId": "d9eff39f-20e0-4462-9f76-25608ee3d3a0"
+    },
+    {
+      "id": "f3b4384a-76da-48cf-ba31-7e0106fe818e",
+      "name": "Find waiting order",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        3300,
+        600
+      ],
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "language": "javaScript",
+        "jsCode": "const orders = $('Read orders for delivery').all().map(function (i) { return i.json; }).filter(function (o) { return o.Order_ID && String(o.Status) === 'Waiting for rider'; });\norders.sort(function (a, b) { return Number(String(a.Order_ID).replace(/\\D/g, '')) - Number(String(b.Order_ID).replace(/\\D/g, '')); });\nconst o = orders[0];\nif (!o) { return [{ json: { found: false } }]; }\nconst c = $('Read customers for delivery').all().map(function (i) { return i.json; }).find(function (x) { return String(x.Customer_ID) === String(o.Customer_ID); }) || {};\nreturn [{ json: { found: true, order_id: o.Order_ID, customer_name: c.Name || '', customer_email: c.Email || '', address: c.Address || '' } }];"
+      },
+      "notes": "Why Code: finds the oldest order still waiting for a rider (lowest ORD number) and the customer data needed to dispatch it. Always returns one item so the IF below has an answer."
+    },
+    {
+      "id": "7bb02245-c4f4-4ffd-bc15-57fcf7a02b91",
+      "name": "Order waiting?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.4,
+      "position": [
+        3540,
+        600
+      ],
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict"
+          },
+          "conditions": [
+            {
+              "id": "c1",
+              "leftValue": "={{ $json.found }}",
+              "rightValue": "",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        }
+      }
+    },
+    {
+      "id": "00e20501-7624-4700-a216-d9058a0c360f",
+      "name": "Assign waiting order",
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1.4,
+      "position": [
+        3780,
+        560
+      ],
+      "parameters": {
+        "source": "database",
+        "workflowId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "NfjlqnvpnWFX7lYa",
+          "cachedResultName": "Demo Traders - Dispatch"
+        },
+        "mode": "once",
+        "options": {
+          "waitForSubWorkflow": true
+        }
+      },
+      "alwaysOutputData": true
+    }
+  ],
+  "connections": {
+    "Dispatch trigger": {
+      "main": [
+        [
+          {
+            "node": "Read riders",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Read riders": {
+      "main": [
+        [
+          {
+            "node": "Pick first free rider",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Pick first free rider": {
+      "main": [
+        [
+          {
+            "node": "Rider free?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Rider free?": {
+      "main": [
+        [
+          {
+            "node": "Read dispatch history",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Mark order waiting",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Read dispatch history": {
+      "main": [
+        [
+          {
+            "node": "Next dispatch number",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Next dispatch number": {
+      "main": [
+        [
+          {
+            "node": "Save dispatch",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Save dispatch": {
+      "main": [
+        [
+          {
+            "node": "Set rider busy",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Set rider busy": {
+      "main": [
+        [
+          {
+            "node": "Mark order dispatched",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Mark order dispatched": {
+      "main": [
+        [
+          {
+            "node": "Email customer on the way",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Email customer on the way": {
+      "main": [
+        [
+          {
+            "node": "Log dispatch",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Log dispatch": {
+      "main": [
+        [
+          {
+            "node": "Result assigned",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Mark order waiting": {
+      "main": [
+        [
+          {
+            "node": "Log no rider free",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Log no rider free": {
+      "main": [
+        [
+          {
+            "node": "Result waiting",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Mark delivered form": {
+      "main": [
+        [
+          {
+            "node": "Read dispatch for delivery",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Read dispatch for delivery": {
+      "main": [
+        [
+          {
+            "node": "Read staff for delivery",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Read staff for delivery": {
+      "main": [
+        [
+          {
+            "node": "Read orders for delivery",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Read orders for delivery": {
+      "main": [
+        [
+          {
+            "node": "Read customers for delivery",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Read customers for delivery": {
+      "main": [
+        [
+          {
+            "node": "Find delivery",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Find delivery": {
+      "main": [
+        [
+          {
+            "node": "Delivery found?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Delivery found?": {
+      "main": [
+        [
+          {
+            "node": "Mark dispatch delivered",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Log rejected delivery",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Mark dispatch delivered": {
+      "main": [
+        [
+          {
+            "node": "Mark order delivered",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Mark order delivered": {
+      "main": [
+        [
+          {
+            "node": "Set rider available",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Set rider available": {
+      "main": [
+        [
+          {
+            "node": "Email customer delivered",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Email customer delivered": {
+      "main": [
+        [
+          {
+            "node": "Log delivery",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Log rejected delivery": {
+      "main": [
+        [
+          {
+            "node": "Delivery not recorded page",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Log delivery": {
+      "main": [
+        [
+          {
+            "node": "Find waiting order",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Find waiting order": {
+      "main": [
+        [
+          {
+            "node": "Order waiting?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Order waiting?": {
+      "main": [
+        [
+          {
+            "node": "Assign waiting order",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Delivered page",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Assign waiting order": {
+      "main": [
+        [
+          {
+            "node": "Delivered page",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "availableInMCP": true,
+    "timezone": "America/Santo_Domingo"
+  },
+  "meta": {
+    "aiBuilderAssisted": true,
+    "builderVariant": "mcp"
+  },
+  "nodeGroups": [],
+  "versionId": "a595935f-9169-44cc-9532-484a7211c873",
+  "activeVersionId": "a595935f-9169-44cc-9532-484a7211c873",
+  "sourceWorkflowId": null,
+  "versionMetadata": {
+    "name": "Dispatch waiting order when a rider is freed",
+    "description": "Added nodes: Find waiting order, Order waiting?, Assign waiting order\nConnections: 5 added, 1 removed"
+  }
+}

@@ -1,0 +1,386 @@
+{
+  "updatedAt": "2026-11-05T00:33:27.057Z",
+  "createdAt": "2026-11-05T00:22:01.941Z",
+  "id": "XWuebGj8HU8QBA3y",
+  "name": "Demo Traders - Front Desk Agent",
+  "description": null,
+  "active": false,
+  "isArchived": false,
+  "nodes": [
+    {
+      "id": "fa926379-5fe1-4cc5-9671-8412fa1b252b",
+      "name": "Demo Traders chat",
+      "type": "@n8n/n8n-nodes-langchain.chatTrigger",
+      "typeVersion": 1.5,
+      "position": [
+        0,
+        256
+      ],
+      "parameters": {
+        "public": true,
+        "mode": "hostedChat",
+        "authentication": "none",
+        "initialMessages": "Hola, bienvenido a Demo Traders. Puedo ayudarte a hacer un pedido, ver el estado de un pedido o consultar productos.",
+        "options": {
+          "responseMode": "streaming",
+          "title": "Demo Traders",
+          "subtitle": "Pedidos por chat",
+          "inputPlaceholder": "Escribe tu mensaje..."
+        }
+      },
+      "webhookId": "92f3cf58-a057-447c-9787-4cbae1a12c7b"
+    },
+    {
+      "id": "75e80fcb-a3e4-4fca-b3d6-18f65e5adff5",
+      "name": "Front desk agent",
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3.1,
+      "position": [
+        416,
+        0
+      ],
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ $json.chatInput }}",
+        "options": {
+          "systemMessage": "You are the Front Desk of Demo Traders, a grocery shop (colmado) in the Dominican Republic. Currency is RD$. Answer in the customer language (Spanish by default), friendly and short.\n\nYou route every request:\n1. NEW ORDER -> tool \"Order agent\".\n2. STATUS of an existing order (for example \"where is ORD-1001\") -> tool \"Support agent\".\n3. PRODUCT questions (what you sell, a price, stock) -> tool \"Products\" (it reads the product sheet). Answer using ONLY what it returns.\n\nMONEY RULES (strict)\n- NEVER invent, estimate, round or calculate a price, subtotal or total yourself. Prices come only from the \"Products\" tool or from the reply of the \"Order agent\". If you do not have the number from a tool, say you will check and call the tool.\n- Do not add up prices. Totals are calculated by the Order agent.\n\nORDER FLOW\n- When the customer wants to order, call \"Order agent\" with a complete summary of everything collected so far (you have the conversation memory): items and quantities, name, phone, email, delivery address, city. Call it as soon as there is at least one item, even if data is missing: it tells you what is missing.\n- Relay the \"reply\" from the tool to the customer exactly as written. Do not change any number.\n- When the tool replies with an order summary and total, wait for the customer. If the customer clearly confirms that exact summary (sí, confirmo, dale, yes...), call \"Order agent\" again with the SAME details plus a last line: CUSTOMER CONFIRMED: YES. Never write that line unless the customer just confirmed the summary shown in the previous message. If the customer changes anything, call the tool again WITHOUT that line.\n- After a confirmed order, relay the confirmation reply exactly.\n\nIf the customer asks for something else, politely say you can help with orders, order status and products.",
+          "maxIterations": 10
+        }
+      }
+    },
+    {
+      "id": "86b2d968-b236-4c50-a44f-bb560b78fa82",
+      "name": "Claude (Front desk)",
+      "type": "@n8n/n8n-nodes-langchain.lmChatAnthropic",
+      "typeVersion": 1.6,
+      "position": [
+        224,
+        224
+      ],
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "mode": "list",
+          "value": "claude-sonnet-5-5",
+          "cachedResultName": "Claude Sonnet 5.5"
+        },
+        "options": {
+          "maxTokensToSample": 1500
+        }
+      },
+      "credentials": {
+        "anthropicApi": {
+          "id": "pu1mRjJVOc4NZZMx",
+          "name": "Anthropic account"
+        }
+      }
+    },
+    {
+      "id": "bd6443d0-6e45-49a1-9b2c-27cbb1959225",
+      "name": "Simple memory",
+      "type": "@n8n/n8n-nodes-langchain.memoryBufferWindow",
+      "typeVersion": 1.4,
+      "position": [
+        352,
+        224
+      ],
+      "parameters": {
+        "sessionIdType": "fromInput",
+        "contextWindowLength": 10
+      }
+    },
+    {
+      "id": "c81d2637-ab14-4a37-808b-be9d227fcbd5",
+      "name": "Order agent",
+      "type": "@n8n/n8n-nodes-langchain.toolWorkflow",
+      "typeVersion": 2.2,
+      "position": [
+        480,
+        224
+      ],
+      "parameters": {
+        "description": "Use for every NEW ORDER. Send in \"request\" a complete plain-text summary of everything collected so far: items and quantities as the customer said them, customer name, phone, email, delivery address and city. It returns a JSON with a \"reply\" to relay to the customer (missing data, order summary with the total, or the final confirmation). Add the line CUSTOMER CONFIRMED: YES at the end of \"request\" only after the customer confirmed the summary.",
+        "source": "database",
+        "workflowId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "2TPOB7F9YDmeE15I",
+          "cachedResultName": "Demo Traders - Order Agent"
+        },
+        "workflowInputs": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "request": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('request', 'Complete plain-text summary of the order details collected so far, plus CUSTOMER CONFIRMED: YES only if the customer confirmed') }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "request",
+              "displayName": "request",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": false,
+              "type": "string"
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        }
+      }
+    },
+    {
+      "id": "1e5db4ab-89f0-4176-b779-f54c6915293e",
+      "name": "Support agent",
+      "type": "@n8n/n8n-nodes-langchain.toolWorkflow",
+      "typeVersion": 2.2,
+      "position": [
+        608,
+        224
+      ],
+      "parameters": {
+        "description": "Use when the customer asks about the STATUS of an existing order, for example \"where is ORD-1001\". Send the customer question including the order number in \"question\". It returns a JSON with a \"reply\" to relay to the customer.",
+        "source": "database",
+        "workflowId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "hJkDbQ5dy7pHcvds",
+          "cachedResultName": "Demo Traders - Support Agent"
+        },
+        "workflowInputs": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "question": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('question', 'The customer question about an order, including the order number such as ORD-1001') }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "question",
+              "displayName": "question",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": false,
+              "type": "string"
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        }
+      }
+    },
+    {
+      "id": "3110eb8f-cd06-470e-b88f-5b883fe20c1e",
+      "name": "Products",
+      "type": "n8n-nodes-base.googleSheetsTool",
+      "typeVersion": 4.7,
+      "position": [
+        736,
+        224
+      ],
+      "parameters": {
+        "resource": "sheet",
+        "operation": "read",
+        "documentId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "1uFc0RmztEiY9tcsNGLe0bExBuhJ5Zxjp6j-J7WfYYjc"
+        },
+        "sheetName": {
+          "__rl": true,
+          "mode": "name",
+          "value": "Products"
+        }
+      },
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "uVqG7fQd8cxSfaMU",
+          "name": "order to delivery system"
+        }
+      }
+    },
+    {
+      "id": "31f00387-5603-4380-9963-b6a5cad29122",
+      "name": "Log chat message",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        480,
+        400
+      ],
+      "parameters": {
+        "resource": "sheet",
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "1uFc0RmztEiY9tcsNGLe0bExBuhJ5Zxjp6j-J7WfYYjc"
+        },
+        "sheetName": {
+          "__rl": true,
+          "mode": "name",
+          "value": "Activity_Log"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Time": "={{ $now.toFormat(\"yyyy-MM-dd HH:mm:ss\") }}",
+            "Agent": "FrontDesk",
+            "Action": "chat_message",
+            "Ref_ID": "={{ $json.sessionId }}",
+            "Details": "=Message received ({{ String($json.chatInput).length }} characters)"
+          },
+          "schema": [
+            {
+              "id": "Time",
+              "displayName": "Time",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Agent",
+              "displayName": "Agent",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Action",
+              "displayName": "Action",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Ref_ID",
+              "displayName": "Ref_ID",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Details",
+              "displayName": "Details",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            }
+          ]
+        },
+        "options": {
+          "cellFormat": "RAW"
+        }
+      },
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "uVqG7fQd8cxSfaMU",
+          "name": "order to delivery system"
+        }
+      },
+      "retryOnFail": true,
+      "maxTries": 5,
+      "waitBetweenTries": 5000
+    }
+  ],
+  "connections": {
+    "Demo Traders chat": {
+      "main": [
+        [
+          {
+            "node": "Front desk agent",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Log chat message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Claude (Front desk)": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Front desk agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Simple memory": {
+      "ai_memory": [
+        [
+          {
+            "node": "Front desk agent",
+            "type": "ai_memory",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Order agent": {
+      "ai_tool": [
+        [
+          {
+            "node": "Front desk agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Support agent": {
+      "ai_tool": [
+        [
+          {
+            "node": "Front desk agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Products": {
+      "ai_tool": [
+        [
+          {
+            "node": "Front desk agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "availableInMCP": true,
+    "timezone": "America/Santo_Domingo"
+  },
+  "meta": {
+    "aiBuilderAssisted": true,
+    "builderVariant": "mcp"
+  },
+  "nodeGroups": [],
+  "versionId": "e28a2620-6c77-4350-b9c8-95884d65635f",
+  "activeVersionId": "e28a2620-6c77-4350-b9c8-95884d65635f",
+  "sourceWorkflowId": null,
+  "versionMetadata": {
+    "name": "Chat responds with agent stream, not the log branch",
+    "description": "Updated nodes: Demo Traders chat"
+  }
+}
