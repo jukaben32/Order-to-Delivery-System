@@ -1,0 +1,2469 @@
+{
+  "updatedAt": "2026-11-05T03:00:13.256Z",
+  "createdAt": "2026-11-05T03:00:13.256Z",
+  "id": "InvControlDemo01",
+  "name": "Demo Traders - Inventory Control",
+  "description": null,
+  "active": false,
+  "isArchived": false,
+  "nodes": [
+    {
+      "name": "Stock movement form",
+      "type": "n8n-nodes-base.formTrigger",
+      "typeVersion": 2.6,
+      "credentials": {
+        "httpBasicAuth": {
+          "id": "FKw937EGT3VSfiqE",
+          "name": "Demo Traders Forms"
+        }
+      },
+      "webhookId": "ea85afe6-97b6-4278-a838-649fc74e95e2",
+      "parameters": {
+        "authentication": "basicAuth",
+        "formTitle": "Movimiento de inventario",
+        "formDescription": "Solo personal. Registra entradas de mercancia, devoluciones, ajustes por conteo y mermas. Cada movimiento queda en el kardex (Inventory_Movements).",
+        "formFields": {
+          "values": [
+            {
+              "fieldLabel": "Tipo de movimiento",
+              "fieldType": "dropdown",
+              "requiredField": true,
+              "fieldOptions": {
+                "values": [
+                  {
+                    "option": "Entrada de mercancía (compra)"
+                  },
+                  {
+                    "option": "Devolución de cliente"
+                  },
+                  {
+                    "option": "Ajuste por conteo: sobrante"
+                  },
+                  {
+                    "option": "Ajuste por conteo: faltante"
+                  },
+                  {
+                    "option": "Merma (dañado o vencido)"
+                  }
+                ]
+              }
+            },
+            {
+              "fieldLabel": "SKU",
+              "fieldType": "text",
+              "placeholder": "RICE-5KG",
+              "requiredField": true
+            },
+            {
+              "fieldLabel": "Cantidad",
+              "fieldType": "number",
+              "requiredField": true
+            },
+            {
+              "fieldLabel": "Costo unitario",
+              "fieldType": "number",
+              "placeholder": "Solo en entradas de mercancia",
+              "requiredField": false
+            },
+            {
+              "fieldLabel": "Referencia",
+              "fieldType": "text",
+              "placeholder": "PR-... (solicitud de compra) o ORD-...",
+              "requiredField": false
+            },
+            {
+              "fieldLabel": "Notas",
+              "fieldType": "text",
+              "requiredField": false
+            }
+          ]
+        },
+        "responseMode": "lastNode",
+        "options": {
+          "appendAttribution": false,
+          "path": "demo-traders-stock-movement"
+        }
+      },
+      "id": "f64ac6af-6797-48ac-9d70-b8e28e413f41",
+      "position": [
+        0,
+        0
+      ]
+    },
+    {
+      "name": "Read products for movement",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "uVqG7fQd8cxSfaMU",
+          "name": "order to delivery system"
+        }
+      },
+      "parameters": {
+        "resource": "sheet",
+        "operation": "read",
+        "documentId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "1uFc0RmztEiY9tcsNGLe0bExBuhJ5Zxjp6j-J7WfYYjc"
+        },
+        "sheetName": {
+          "__rl": true,
+          "mode": "name",
+          "value": "Products"
+        }
+      },
+      "retryOnFail": true,
+      "maxTries": 5,
+      "waitBetweenTries": 5000,
+      "alwaysOutputData": true,
+      "id": "58d44bf2-b945-4122-b8f7-93dd52312e43",
+      "position": [
+        240,
+        0
+      ]
+    },
+    {
+      "name": "Read purchase requests",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "uVqG7fQd8cxSfaMU",
+          "name": "order to delivery system"
+        }
+      },
+      "parameters": {
+        "resource": "sheet",
+        "operation": "read",
+        "documentId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "1uFc0RmztEiY9tcsNGLe0bExBuhJ5Zxjp6j-J7WfYYjc"
+        },
+        "sheetName": {
+          "__rl": true,
+          "mode": "name",
+          "value": "Purchase_Requests"
+        }
+      },
+      "retryOnFail": true,
+      "maxTries": 5,
+      "waitBetweenTries": 5000,
+      "alwaysOutputData": true,
+      "executeOnce": true,
+      "id": "a30f4372-a25b-40c2-9644-3a0d8271ea41",
+      "position": [
+        480,
+        0
+      ]
+    },
+    {
+      "name": "Read movements for movement",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "uVqG7fQd8cxSfaMU",
+          "name": "order to delivery system"
+        }
+      },
+      "parameters": {
+        "resource": "sheet",
+        "operation": "read",
+        "documentId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "1uFc0RmztEiY9tcsNGLe0bExBuhJ5Zxjp6j-J7WfYYjc"
+        },
+        "sheetName": {
+          "__rl": true,
+          "mode": "name",
+          "value": "Inventory_Movements"
+        }
+      },
+      "retryOnFail": true,
+      "maxTries": 5,
+      "waitBetweenTries": 5000,
+      "alwaysOutputData": true,
+      "executeOnce": true,
+      "id": "0aeec71b-3570-4bf3-87a0-8f3dc7ff8082",
+      "position": [
+        720,
+        0
+      ]
+    },
+    {
+      "name": "Plan stock movement",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "language": "javaScript",
+        "jsCode": "const form = $('Stock movement form').first().json;\nconst products = $('Read products for movement').all().map(function (i) { return i.json; }).filter(function (p) { return p.SKU; });\nconst prs = $('Read purchase requests').all().map(function (i) { return i.json; }).filter(function (r) { return r.PR_ID; });\nconst moves = $input.all().map(function (i) { return i.json; }).filter(function (m) { return m.Movement_ID; });\nfunction fail(msg) { return [{ json: { ok: false, message: msg } }]; }\nconst TYPES = {\n  'Entrada de mercancía (compra)': { code: 'PURCHASE_RECEIPT', sign: 1 },\n  'Devolución de cliente': { code: 'CUSTOMER_RETURN', sign: 1 },\n  'Ajuste por conteo: sobrante': { code: 'ADJUST_UP', sign: 1 },\n  'Ajuste por conteo: faltante': { code: 'ADJUST_DOWN', sign: -1 },\n  'Merma (dañado o vencido)': { code: 'SHRINKAGE', sign: -1 }\n};\nconst t = TYPES[String(form['Tipo de movimiento'] || '')];\nconst sku = String(form['SKU'] || '').trim().toUpperCase();\nconst qty = Math.round(Number(form['Cantidad']));\nconst ref = String(form['Referencia'] || '').trim();\nconst notes = String(form['Notas'] || '').trim().slice(0, 200);\nif (!t) { return fail('Elige un tipo de movimiento.'); }\nconst p = products.find(function (x) { return String(x.SKU).toUpperCase() === sku; });\nif (!p) { return fail('El producto ' + sku + ' no existe en el catálogo. No se registró nada.'); }\nif (!(qty > 0)) { return fail('La cantidad debe ser mayor que cero. No se registró nada.'); }\nconst stock = Number(p.Stock) || 0;\nconst oldCost = Number(p.Cost) || 0;\nconst delta = t.sign * qty;\nconst newStock = stock + delta;\nif (newStock < 0) { return fail('No se puede: el stock de ' + p.Name + ' es ' + stock + ' y quedaría en ' + newStock + '. No se registró nada.'); }\nlet unitCost = oldCost;\nlet newCost = oldCost;\nconst costIn = Number(form['Costo unitario']);\nif (t.code === 'PURCHASE_RECEIPT' && costIn > 0) {\n  unitCost = costIn;\n  newCost = Math.round(((stock * oldCost + qty * costIn) / (stock + qty)) * 100) / 100;\n}\nlet prId = '';\nlet prStatus = '';\nif (t.code === 'PURCHASE_RECEIPT' && ref) {\n  const pr = prs.find(function (r) { return String(r.PR_ID).toUpperCase() === ref.toUpperCase(); });\n  if (!pr) { return fail('La solicitud de compra ' + ref + ' no existe. Déjala vacía si no aplica. No se registró nada.'); }\n  if (String(pr.SKU).toUpperCase() !== sku) { return fail('La solicitud ' + pr.PR_ID + ' es de ' + pr.SKU + ', no de ' + sku + '. No se registró nada.'); }\n  const before = moves.filter(function (m) { return String(m.Type) === 'PURCHASE_RECEIPT' && String(m.Ref_ID).toUpperCase() === ref.toUpperCase(); }).reduce(function (s, m) { return s + (Number(m.Qty) || 0); }, 0);\n  prId = pr.PR_ID;\n  prStatus = (before + qty) >= Number(pr.Qty) ? 'Received' : 'Partial';\n}\nconst value = Math.round(delta * unitCost * 100) / 100;\nconst label = { PURCHASE_RECEIPT: 'Entrada de mercancía', CUSTOMER_RETURN: 'Devolución de cliente', ADJUST_UP: 'Ajuste (sobrante)', ADJUST_DOWN: 'Ajuste (faltante)', SHRINKAGE: 'Merma' }[t.code];\nlet message = label + ' registrada: ' + p.Name + ' ' + (delta > 0 ? '+' : '') + delta + '. Stock: ' + stock + ' → ' + newStock + '.';\nif (t.code === 'PURCHASE_RECEIPT' && costIn > 0) { message += ' Costo promedio: RD$ ' + newCost + '.'; }\nif (prId) { message += ' Solicitud ' + prId + ': ' + (prStatus === 'Received' ? 'recibida completa' : 'recibida parcial') + '.'; }\nreturn [{ json: { ok: true, SKU: String(p.SKU), product: p.Name, code: t.code, qty: delta, new_stock: newStock, unit_cost: unitCost, new_cost: newCost, value: value, ref: ref, notes: notes, pr_id: prId, pr_status: prStatus, movement_id: 'MOV-' + $now.toFormat('yyyyMMddHHmmss') + '-' + Math.floor(100 + Math.random() * 900), message: message } }];"
+      },
+      "notes": "Why Code: validates the movement (existing SKU, positive quantity, stock never below zero), computes the weighted average cost for purchase receipts and decides if a purchase request is fully or partially received.",
+      "id": "8f169b88-9cae-407c-8e00-1d45a5963a3f",
+      "position": [
+        960,
+        0
+      ]
+    },
+    {
+      "name": "Movement valid?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.4,
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict"
+          },
+          "conditions": [
+            {
+              "id": "06f4fff9-b584-451a-b4a3-f1e141c52f86",
+              "leftValue": "={{ $json.ok }}",
+              "rightValue": "",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "a61f5b1c-ba10-4a2f-9979-874067860cfb",
+      "position": [
+        1200,
+        0
+      ]
+    },
+    {
+      "name": "Update product stock and cost",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "uVqG7fQd8cxSfaMU",
+          "name": "order to delivery system"
+        }
+      },
+      "parameters": {
+        "resource": "sheet",
+        "operation": "update",
+        "documentId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "1uFc0RmztEiY9tcsNGLe0bExBuhJ5Zxjp6j-J7WfYYjc"
+        },
+        "sheetName": {
+          "__rl": true,
+          "mode": "name",
+          "value": "Products"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "SKU": "={{ $json.SKU }}",
+            "Stock": "={{ $json.new_stock }}",
+            "Cost": "={{ $json.new_cost }}"
+          },
+          "matchingColumns": [
+            "SKU"
+          ],
+          "schema": [
+            {
+              "id": "SKU",
+              "displayName": "SKU",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Stock",
+              "displayName": "Stock",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": false
+            },
+            {
+              "id": "Cost",
+              "displayName": "Cost",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": false
+            }
+          ]
+        },
+        "options": {
+          "cellFormat": "RAW"
+        }
+      },
+      "retryOnFail": true,
+      "maxTries": 5,
+      "waitBetweenTries": 5000,
+      "id": "db7969ea-e288-4542-b437-1be5afa5644b",
+      "position": [
+        1440,
+        0
+      ]
+    },
+    {
+      "name": "Save movement",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "uVqG7fQd8cxSfaMU",
+          "name": "order to delivery system"
+        }
+      },
+      "parameters": {
+        "resource": "sheet",
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "1uFc0RmztEiY9tcsNGLe0bExBuhJ5Zxjp6j-J7WfYYjc"
+        },
+        "sheetName": {
+          "__rl": true,
+          "mode": "name",
+          "value": "Inventory_Movements"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Movement_ID": "={{ $(\"Plan stock movement\").first().json.movement_id }}",
+            "Time": "={{ $now.toFormat(\"yyyy-MM-dd HH:mm:ss\") }}",
+            "SKU": "={{ $(\"Plan stock movement\").first().json.SKU }}",
+            "Product": "={{ $(\"Plan stock movement\").first().json.product }}",
+            "Type": "={{ $(\"Plan stock movement\").first().json.code }}",
+            "Qty": "={{ $(\"Plan stock movement\").first().json.qty }}",
+            "Stock_After": "={{ $(\"Plan stock movement\").first().json.new_stock }}",
+            "Unit_Cost": "={{ $(\"Plan stock movement\").first().json.unit_cost }}",
+            "Value": "={{ $(\"Plan stock movement\").first().json.value }}",
+            "Ref_ID": "={{ $(\"Plan stock movement\").first().json.ref }}",
+            "Notes": "={{ $(\"Plan stock movement\").first().json.notes }}",
+            "Source": "Stock movement form"
+          },
+          "schema": [
+            {
+              "id": "Movement_ID",
+              "displayName": "Movement_ID",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Time",
+              "displayName": "Time",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "SKU",
+              "displayName": "SKU",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Product",
+              "displayName": "Product",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Type",
+              "displayName": "Type",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Qty",
+              "displayName": "Qty",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Stock_After",
+              "displayName": "Stock_After",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Unit_Cost",
+              "displayName": "Unit_Cost",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Value",
+              "displayName": "Value",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Ref_ID",
+              "displayName": "Ref_ID",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Notes",
+              "displayName": "Notes",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Source",
+              "displayName": "Source",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            }
+          ]
+        },
+        "options": {
+          "cellFormat": "RAW"
+        }
+      },
+      "retryOnFail": true,
+      "maxTries": 5,
+      "waitBetweenTries": 5000,
+      "id": "57b8f95a-28f3-44b9-a2c3-f82119e56b65",
+      "position": [
+        1680,
+        0
+      ]
+    },
+    {
+      "name": "Linked purchase request?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.4,
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict"
+          },
+          "conditions": [
+            {
+              "id": "678a7185-8605-4765-a9c1-b063dc68fed0",
+              "leftValue": "={{ !!$(\"Plan stock movement\").first().json.pr_id }}",
+              "rightValue": "",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "b62dfd5f-b8b2-4926-8126-2e6f2d0fded4",
+      "position": [
+        1920,
+        0
+      ]
+    },
+    {
+      "name": "Update purchase request",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "uVqG7fQd8cxSfaMU",
+          "name": "order to delivery system"
+        }
+      },
+      "parameters": {
+        "resource": "sheet",
+        "operation": "update",
+        "documentId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "1uFc0RmztEiY9tcsNGLe0bExBuhJ5Zxjp6j-J7WfYYjc"
+        },
+        "sheetName": {
+          "__rl": true,
+          "mode": "name",
+          "value": "Purchase_Requests"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "PR_ID": "={{ $(\"Plan stock movement\").first().json.pr_id }}",
+            "Status": "={{ $(\"Plan stock movement\").first().json.pr_status }}"
+          },
+          "matchingColumns": [
+            "PR_ID"
+          ],
+          "schema": [
+            {
+              "id": "PR_ID",
+              "displayName": "PR_ID",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Status",
+              "displayName": "Status",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": false
+            }
+          ]
+        },
+        "options": {
+          "cellFormat": "RAW"
+        }
+      },
+      "retryOnFail": true,
+      "maxTries": 5,
+      "waitBetweenTries": 5000,
+      "id": "3609bcbb-dabf-49fd-b2fc-1912af07d12f",
+      "position": [
+        2160,
+        0
+      ]
+    },
+    {
+      "name": "Log stock movement",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "uVqG7fQd8cxSfaMU",
+          "name": "order to delivery system"
+        }
+      },
+      "parameters": {
+        "resource": "sheet",
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "1uFc0RmztEiY9tcsNGLe0bExBuhJ5Zxjp6j-J7WfYYjc"
+        },
+        "sheetName": {
+          "__rl": true,
+          "mode": "name",
+          "value": "Activity_Log"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Time": "={{ $now.toFormat(\"yyyy-MM-dd HH:mm:ss\") }}",
+            "Agent": "Inventory",
+            "Action": "={{ \"stock_\" + $(\"Plan stock movement\").first().json.code.toLowerCase() }}",
+            "Ref_ID": "={{ $(\"Plan stock movement\").first().json.movement_id }}",
+            "Details": "={{ $(\"Plan stock movement\").first().json.message }}"
+          },
+          "schema": [
+            {
+              "id": "Time",
+              "displayName": "Time",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Agent",
+              "displayName": "Agent",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Action",
+              "displayName": "Action",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Ref_ID",
+              "displayName": "Ref_ID",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Details",
+              "displayName": "Details",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            }
+          ]
+        },
+        "options": {
+          "cellFormat": "RAW"
+        }
+      },
+      "retryOnFail": true,
+      "maxTries": 5,
+      "waitBetweenTries": 5000,
+      "id": "7bddd19c-8de7-407c-89b6-fda194df682c",
+      "position": [
+        2400,
+        0
+      ]
+    },
+    {
+      "name": "Movement recorded page",
+      "type": "n8n-nodes-base.form",
+      "typeVersion": 2.5,
+      "parameters": {
+        "operation": "completion",
+        "respondWith": "text",
+        "completionTitle": "Movimiento registrado",
+        "completionMessage": "={{ $(\"Plan stock movement\").first().json.message }}",
+        "options": {
+          "appendAttribution": false
+        }
+      },
+      "id": "9a43c6d2-0c09-40e1-b5a3-b7815e9f833e",
+      "position": [
+        2640,
+        0
+      ]
+    },
+    {
+      "name": "Log rejected movement",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "uVqG7fQd8cxSfaMU",
+          "name": "order to delivery system"
+        }
+      },
+      "parameters": {
+        "resource": "sheet",
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "1uFc0RmztEiY9tcsNGLe0bExBuhJ5Zxjp6j-J7WfYYjc"
+        },
+        "sheetName": {
+          "__rl": true,
+          "mode": "name",
+          "value": "Activity_Log"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Time": "={{ $now.toFormat(\"yyyy-MM-dd HH:mm:ss\") }}",
+            "Agent": "Inventory",
+            "Action": "stock_movement_rejected",
+            "Ref_ID": "",
+            "Details": "={{ $json.message }}"
+          },
+          "schema": [
+            {
+              "id": "Time",
+              "displayName": "Time",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Agent",
+              "displayName": "Agent",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Action",
+              "displayName": "Action",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Ref_ID",
+              "displayName": "Ref_ID",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Details",
+              "displayName": "Details",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            }
+          ]
+        },
+        "options": {
+          "cellFormat": "RAW"
+        }
+      },
+      "retryOnFail": true,
+      "maxTries": 5,
+      "waitBetweenTries": 5000,
+      "id": "dcd8fe6a-2157-4d2f-944b-c1aa5518cc67",
+      "position": [
+        2880,
+        0
+      ]
+    },
+    {
+      "name": "Movement rejected page",
+      "type": "n8n-nodes-base.form",
+      "typeVersion": 2.5,
+      "parameters": {
+        "operation": "completion",
+        "respondWith": "text",
+        "completionTitle": "Movimiento no registrado",
+        "completionMessage": "={{ $(\"Plan stock movement\").first().json.message }}",
+        "options": {
+          "appendAttribution": false
+        }
+      },
+      "id": "9bd4b68b-38dd-4cdd-8be2-6b67a05cd7f0",
+      "position": [
+        3120,
+        0
+      ]
+    },
+    {
+      "name": "Cancel order form",
+      "type": "n8n-nodes-base.formTrigger",
+      "typeVersion": 2.6,
+      "credentials": {
+        "httpBasicAuth": {
+          "id": "FKw937EGT3VSfiqE",
+          "name": "Demo Traders Forms"
+        }
+      },
+      "webhookId": "591446c1-d103-4c36-987e-3e64a61e0681",
+      "parameters": {
+        "authentication": "basicAuth",
+        "formTitle": "Cancelar pedido",
+        "formDescription": "Solo personal. Cancela un pedido que no se ha entregado: devuelve el stock, cancela la factura, libera al repartidor y avisa al cliente.",
+        "formFields": {
+          "values": [
+            {
+              "fieldLabel": "Pedido",
+              "fieldType": "text",
+              "placeholder": "ORD-1001",
+              "requiredField": true
+            },
+            {
+              "fieldLabel": "Motivo",
+              "fieldType": "dropdown",
+              "requiredField": true,
+              "fieldOptions": {
+                "values": [
+                  {
+                    "option": "Cliente canceló"
+                  },
+                  {
+                    "option": "Producto no disponible"
+                  },
+                  {
+                    "option": "Error en el pedido"
+                  },
+                  {
+                    "option": "Otro"
+                  }
+                ]
+              }
+            }
+          ]
+        },
+        "responseMode": "lastNode",
+        "options": {
+          "appendAttribution": false,
+          "path": "demo-traders-cancel-order"
+        }
+      },
+      "id": "2a8e51e7-9a0e-4200-9dd3-6aac0c69d3ab",
+      "position": [
+        3360,
+        0
+      ]
+    },
+    {
+      "name": "Read orders for cancel",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "uVqG7fQd8cxSfaMU",
+          "name": "order to delivery system"
+        }
+      },
+      "parameters": {
+        "resource": "sheet",
+        "operation": "read",
+        "documentId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "1uFc0RmztEiY9tcsNGLe0bExBuhJ5Zxjp6j-J7WfYYjc"
+        },
+        "sheetName": {
+          "__rl": true,
+          "mode": "name",
+          "value": "Orders"
+        }
+      },
+      "retryOnFail": true,
+      "maxTries": 5,
+      "waitBetweenTries": 5000,
+      "alwaysOutputData": true,
+      "id": "a1b4c87e-f23d-4e3a-bf16-0a011017e531",
+      "position": [
+        3600,
+        0
+      ]
+    },
+    {
+      "name": "Read invoices for cancel",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "uVqG7fQd8cxSfaMU",
+          "name": "order to delivery system"
+        }
+      },
+      "parameters": {
+        "resource": "sheet",
+        "operation": "read",
+        "documentId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "1uFc0RmztEiY9tcsNGLe0bExBuhJ5Zxjp6j-J7WfYYjc"
+        },
+        "sheetName": {
+          "__rl": true,
+          "mode": "name",
+          "value": "Invoices"
+        }
+      },
+      "retryOnFail": true,
+      "maxTries": 5,
+      "waitBetweenTries": 5000,
+      "alwaysOutputData": true,
+      "executeOnce": true,
+      "id": "6e8efc92-5337-451e-88dd-0b62ce3fdb5c",
+      "position": [
+        3840,
+        0
+      ]
+    },
+    {
+      "name": "Read dispatch for cancel",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "uVqG7fQd8cxSfaMU",
+          "name": "order to delivery system"
+        }
+      },
+      "parameters": {
+        "resource": "sheet",
+        "operation": "read",
+        "documentId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "1uFc0RmztEiY9tcsNGLe0bExBuhJ5Zxjp6j-J7WfYYjc"
+        },
+        "sheetName": {
+          "__rl": true,
+          "mode": "name",
+          "value": "Dispatch"
+        }
+      },
+      "retryOnFail": true,
+      "maxTries": 5,
+      "waitBetweenTries": 5000,
+      "alwaysOutputData": true,
+      "executeOnce": true,
+      "id": "e9a4b87c-4e17-4bc0-a416-a050cae3640c",
+      "position": [
+        4080,
+        0
+      ]
+    },
+    {
+      "name": "Read staff for cancel",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "uVqG7fQd8cxSfaMU",
+          "name": "order to delivery system"
+        }
+      },
+      "parameters": {
+        "resource": "sheet",
+        "operation": "read",
+        "documentId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "1uFc0RmztEiY9tcsNGLe0bExBuhJ5Zxjp6j-J7WfYYjc"
+        },
+        "sheetName": {
+          "__rl": true,
+          "mode": "name",
+          "value": "Staff"
+        }
+      },
+      "retryOnFail": true,
+      "maxTries": 5,
+      "waitBetweenTries": 5000,
+      "alwaysOutputData": true,
+      "executeOnce": true,
+      "id": "8c6d1cc9-fee8-43cb-8264-8e25156d3e61",
+      "position": [
+        4320,
+        0
+      ]
+    },
+    {
+      "name": "Read customers for cancel",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "uVqG7fQd8cxSfaMU",
+          "name": "order to delivery system"
+        }
+      },
+      "parameters": {
+        "resource": "sheet",
+        "operation": "read",
+        "documentId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "1uFc0RmztEiY9tcsNGLe0bExBuhJ5Zxjp6j-J7WfYYjc"
+        },
+        "sheetName": {
+          "__rl": true,
+          "mode": "name",
+          "value": "Customers"
+        }
+      },
+      "retryOnFail": true,
+      "maxTries": 5,
+      "waitBetweenTries": 5000,
+      "alwaysOutputData": true,
+      "executeOnce": true,
+      "id": "59cc4539-60aa-4985-a2cb-d45016023f7c",
+      "position": [
+        4560,
+        0
+      ]
+    },
+    {
+      "name": "Read products for cancel",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "uVqG7fQd8cxSfaMU",
+          "name": "order to delivery system"
+        }
+      },
+      "parameters": {
+        "resource": "sheet",
+        "operation": "read",
+        "documentId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "1uFc0RmztEiY9tcsNGLe0bExBuhJ5Zxjp6j-J7WfYYjc"
+        },
+        "sheetName": {
+          "__rl": true,
+          "mode": "name",
+          "value": "Products"
+        }
+      },
+      "retryOnFail": true,
+      "maxTries": 5,
+      "waitBetweenTries": 5000,
+      "alwaysOutputData": true,
+      "executeOnce": true,
+      "id": "7c20884b-c720-4d35-8a5c-43b3ef3675fe",
+      "position": [
+        4800,
+        0
+      ]
+    },
+    {
+      "name": "Plan cancellation",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "language": "javaScript",
+        "jsCode": "const form = $('Cancel order form').first().json;\nconst wanted = String(form['Pedido'] || '').trim().toUpperCase();\nconst reason = String(form['Motivo'] || 'Otro');\nfunction rows(n) { return $(n).all().map(function (i) { return i.json; }); }\nfunction fail(m) { return [{ json: { ok: false, message: m } }]; }\nconst order = rows('Read orders for cancel').find(function (o) { return String(o.Order_ID || '').toUpperCase() === wanted; });\nif (!order) { return fail('No encontré el pedido ' + wanted + '. No se cambió nada.'); }\nconst status = String(order.Status);\nif (status === 'Cancelled') { return fail('El pedido ' + order.Order_ID + ' ya estaba cancelado. No se cambió nada.'); }\nif (status === 'Delivered') { return fail('El pedido ' + order.Order_ID + ' ya fue entregado. Para una devolución usa el formulario de movimiento de inventario (Devolución de cliente). No se cambió nada.'); }\nconst inv = rows('Read invoices for cancel').find(function (i) { return String(i.Order_ID) === String(order.Order_ID); });\nconst disp = rows('Read dispatch for cancel').find(function (d) { return String(d.Order_ID) === String(order.Order_ID) && String(d.Status) === 'Dispatched'; });\nconst staff = disp ? rows('Read staff for cancel').find(function (s) { return String(s.Name) === String(disp.Rider); }) : null;\nconst cust = rows('Read customers for cancel').find(function (c) { return String(c.Customer_ID) === String(order.Customer_ID); }) || {};\nconst products = rows('Read products for cancel').filter(function (p) { return p.SKU; });\nconst items = String(order.Items || '').split(';').map(function (s) { return s.trim(); }).filter(Boolean).map(function (s) {\n  const m = s.match(/^(.+?)\\s*x\\s*(\\d+)$/);\n  return m ? { sku: m[1].trim(), qty: Number(m[2]) } : null;\n}).filter(Boolean);\nconst stamp = $now.toFormat('yyyyMMddHHmmss');\nconst restock = [];\nitems.forEach(function (it, idx) {\n  const p = products.find(function (x) { return String(x.SKU) === it.sku; });\n  if (!p) { return; }\n  const stock = Number(p.Stock) || 0;\n  const cost = Number(p.Cost) || 0;\n  restock.push({ SKU: it.sku, product: p.Name, qty: it.qty, new_stock: stock + it.qty, unit_cost: cost, value: Math.round(it.qty * cost * 100) / 100, movement_id: 'MOV-' + stamp + '-' + (idx + 1), notes: reason });\n});\nif (!restock.length) { return fail('No pude leer los productos del pedido ' + order.Order_ID + '. No se cambió nada.'); }\nconst hasInvoice = !!inv;\nconst refund = hasInvoice && String(inv.Status) !== 'Unpaid';\nconst invoiceNew = hasInvoice ? (refund ? 'Refund pending' : 'Cancelled') : '';\nlet message = 'Pedido ' + order.Order_ID + ' cancelado (' + reason + '). Stock devuelto: ' + restock.map(function (r) { return r.qty + ' x ' + r.SKU; }).join(', ') + '.';\nif (hasInvoice) { message += ' Factura ' + inv.Invoice_No + ': ' + invoiceNew + '.'; }\nif (refund) { message += ' ATENCIÓN: la factura tenía pagos registrados; hay que devolver el dinero al cliente.'; }\nif (disp) { message += ' ' + disp.Rider + ' queda libre: confirma que regrese la mercancía.'; }\nreturn [{ json: { ok: true, order_id: order.Order_ID, reason: reason, restock: restock, has_invoice: hasInvoice, invoice_no: hasInvoice ? inv.Invoice_No : '', invoice_new_status: invoiceNew, refund_pending: refund, has_dispatch: !!disp, dispatch_id: disp ? disp.Dispatch_ID : '', staff_id: staff ? staff.Staff_ID : '', rider_name: disp ? disp.Rider : '', customer_name: String(cust.Name || ''), customer_email: String(cust.Email || ''), customer_phone: String(cust.Phone || ''), message: message } }];"
+      },
+      "notes": "Why Code: finds the order, its invoice, open delivery, rider and customer; parses the items of the order and works out the new stock of each product. Delivered or already cancelled orders are rejected.",
+      "id": "dffcf109-2ffc-4012-b1a5-d2510228313c",
+      "position": [
+        5040,
+        0
+      ]
+    },
+    {
+      "name": "Cancellable?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.4,
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict"
+          },
+          "conditions": [
+            {
+              "id": "bdfd6cb1-f8fa-4c4f-9fb3-e07fe0f72762",
+              "leftValue": "={{ $json.ok }}",
+              "rightValue": "",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "f443af23-19c6-458f-92fc-06bfc47cd0ac",
+      "position": [
+        5280,
+        0
+      ]
+    },
+    {
+      "name": "Split restock lines",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "language": "javaScript",
+        "jsCode": "return $input.first().json.restock.map(function (r) { return { json: r }; });"
+      },
+      "notes": "Why Code: turns the restock array into one item per product so the Sheets nodes update each product.",
+      "id": "d2661cf9-2ff4-4b20-ac17-f1bbbf3bcf2c",
+      "position": [
+        5520,
+        0
+      ]
+    },
+    {
+      "name": "Return stock",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "uVqG7fQd8cxSfaMU",
+          "name": "order to delivery system"
+        }
+      },
+      "parameters": {
+        "resource": "sheet",
+        "operation": "update",
+        "documentId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "1uFc0RmztEiY9tcsNGLe0bExBuhJ5Zxjp6j-J7WfYYjc"
+        },
+        "sheetName": {
+          "__rl": true,
+          "mode": "name",
+          "value": "Products"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "SKU": "={{ $json.SKU }}",
+            "Stock": "={{ $json.new_stock }}"
+          },
+          "matchingColumns": [
+            "SKU"
+          ],
+          "schema": [
+            {
+              "id": "SKU",
+              "displayName": "SKU",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Stock",
+              "displayName": "Stock",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": false
+            }
+          ]
+        },
+        "options": {
+          "cellFormat": "RAW"
+        }
+      },
+      "retryOnFail": true,
+      "maxTries": 5,
+      "waitBetweenTries": 5000,
+      "id": "d1eb3a68-0a1b-48d7-92e5-8fb541dfbfe7",
+      "position": [
+        5760,
+        0
+      ]
+    },
+    {
+      "name": "Save return movements",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "uVqG7fQd8cxSfaMU",
+          "name": "order to delivery system"
+        }
+      },
+      "parameters": {
+        "resource": "sheet",
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "1uFc0RmztEiY9tcsNGLe0bExBuhJ5Zxjp6j-J7WfYYjc"
+        },
+        "sheetName": {
+          "__rl": true,
+          "mode": "name",
+          "value": "Inventory_Movements"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Movement_ID": "={{ $(\"Split restock lines\").item.json.movement_id }}",
+            "Time": "={{ $now.toFormat(\"yyyy-MM-dd HH:mm:ss\") }}",
+            "SKU": "={{ $(\"Split restock lines\").item.json.SKU }}",
+            "Product": "={{ $(\"Split restock lines\").item.json.product }}",
+            "Type": "CANCEL_RETURN",
+            "Qty": "={{ $(\"Split restock lines\").item.json.qty }}",
+            "Stock_After": "={{ $(\"Split restock lines\").item.json.new_stock }}",
+            "Unit_Cost": "={{ $(\"Split restock lines\").item.json.unit_cost }}",
+            "Value": "={{ $(\"Split restock lines\").item.json.value }}",
+            "Ref_ID": "={{ $(\"Plan cancellation\").first().json.order_id }}",
+            "Notes": "={{ $(\"Split restock lines\").item.json.notes }}",
+            "Source": "Cancel order form"
+          },
+          "schema": [
+            {
+              "id": "Movement_ID",
+              "displayName": "Movement_ID",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Time",
+              "displayName": "Time",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "SKU",
+              "displayName": "SKU",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Product",
+              "displayName": "Product",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Type",
+              "displayName": "Type",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Qty",
+              "displayName": "Qty",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Stock_After",
+              "displayName": "Stock_After",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Unit_Cost",
+              "displayName": "Unit_Cost",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Value",
+              "displayName": "Value",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Ref_ID",
+              "displayName": "Ref_ID",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Notes",
+              "displayName": "Notes",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Source",
+              "displayName": "Source",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            }
+          ]
+        },
+        "options": {
+          "cellFormat": "RAW"
+        }
+      },
+      "retryOnFail": true,
+      "maxTries": 5,
+      "waitBetweenTries": 5000,
+      "id": "a82b196a-a208-435e-a20f-134a6dab4641",
+      "position": [
+        6000,
+        0
+      ]
+    },
+    {
+      "name": "Back to one item",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "language": "javaScript",
+        "jsCode": "return [{ json: $('Plan cancellation').first().json }];"
+      },
+      "notes": "Why Code: after the per-product updates, continues with one item carrying the cancellation plan.",
+      "id": "ae4e109b-0128-4f97-9ab4-5f0c7353c6b5",
+      "position": [
+        6240,
+        0
+      ]
+    },
+    {
+      "name": "Mark order cancelled",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "uVqG7fQd8cxSfaMU",
+          "name": "order to delivery system"
+        }
+      },
+      "parameters": {
+        "resource": "sheet",
+        "operation": "update",
+        "documentId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "1uFc0RmztEiY9tcsNGLe0bExBuhJ5Zxjp6j-J7WfYYjc"
+        },
+        "sheetName": {
+          "__rl": true,
+          "mode": "name",
+          "value": "Orders"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Order_ID": "={{ $(\"Plan cancellation\").first().json.order_id }}",
+            "Status": "Cancelled"
+          },
+          "matchingColumns": [
+            "Order_ID"
+          ],
+          "schema": [
+            {
+              "id": "Order_ID",
+              "displayName": "Order_ID",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Status",
+              "displayName": "Status",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": false
+            }
+          ]
+        },
+        "options": {
+          "cellFormat": "RAW"
+        }
+      },
+      "retryOnFail": true,
+      "maxTries": 5,
+      "waitBetweenTries": 5000,
+      "id": "d620982c-f862-4596-8626-5a06ff4a6502",
+      "position": [
+        6480,
+        0
+      ]
+    },
+    {
+      "name": "Has invoice?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.4,
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict"
+          },
+          "conditions": [
+            {
+              "id": "5cad9871-37b4-4ae4-8929-a9e7b80a77a1",
+              "leftValue": "={{ $(\"Plan cancellation\").first().json.has_invoice }}",
+              "rightValue": "",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "fba64ae0-65b2-46e9-a56a-08012df1d3d1",
+      "position": [
+        6720,
+        0
+      ]
+    },
+    {
+      "name": "Cancel invoice",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "uVqG7fQd8cxSfaMU",
+          "name": "order to delivery system"
+        }
+      },
+      "parameters": {
+        "resource": "sheet",
+        "operation": "update",
+        "documentId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "1uFc0RmztEiY9tcsNGLe0bExBuhJ5Zxjp6j-J7WfYYjc"
+        },
+        "sheetName": {
+          "__rl": true,
+          "mode": "name",
+          "value": "Invoices"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Invoice_No": "={{ $(\"Plan cancellation\").first().json.invoice_no }}",
+            "Status": "={{ $(\"Plan cancellation\").first().json.invoice_new_status }}"
+          },
+          "matchingColumns": [
+            "Invoice_No"
+          ],
+          "schema": [
+            {
+              "id": "Invoice_No",
+              "displayName": "Invoice_No",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Status",
+              "displayName": "Status",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": false
+            }
+          ]
+        },
+        "options": {
+          "cellFormat": "RAW"
+        }
+      },
+      "retryOnFail": true,
+      "maxTries": 5,
+      "waitBetweenTries": 5000,
+      "id": "93fe4f81-26e0-4753-a5fa-e44c3089834e",
+      "position": [
+        6960,
+        0
+      ]
+    },
+    {
+      "name": "Has open delivery?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.4,
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict"
+          },
+          "conditions": [
+            {
+              "id": "21b9d615-20d0-41df-9e6d-6d5e7ddbbcde",
+              "leftValue": "={{ $(\"Plan cancellation\").first().json.has_dispatch }}",
+              "rightValue": "",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "a54867ef-6976-4e9d-a1c2-efe994108305",
+      "position": [
+        7200,
+        0
+      ]
+    },
+    {
+      "name": "Cancel dispatch row",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "uVqG7fQd8cxSfaMU",
+          "name": "order to delivery system"
+        }
+      },
+      "parameters": {
+        "resource": "sheet",
+        "operation": "update",
+        "documentId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "1uFc0RmztEiY9tcsNGLe0bExBuhJ5Zxjp6j-J7WfYYjc"
+        },
+        "sheetName": {
+          "__rl": true,
+          "mode": "name",
+          "value": "Dispatch"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Dispatch_ID": "={{ $(\"Plan cancellation\").first().json.dispatch_id }}",
+            "Status": "Cancelled"
+          },
+          "matchingColumns": [
+            "Dispatch_ID"
+          ],
+          "schema": [
+            {
+              "id": "Dispatch_ID",
+              "displayName": "Dispatch_ID",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Status",
+              "displayName": "Status",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": false
+            }
+          ]
+        },
+        "options": {
+          "cellFormat": "RAW"
+        }
+      },
+      "retryOnFail": true,
+      "maxTries": 5,
+      "waitBetweenTries": 5000,
+      "id": "1fc82f2a-edea-4a53-af6e-1c2dd2bb01d9",
+      "position": [
+        7440,
+        0
+      ]
+    },
+    {
+      "name": "Free rider",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "uVqG7fQd8cxSfaMU",
+          "name": "order to delivery system"
+        }
+      },
+      "parameters": {
+        "resource": "sheet",
+        "operation": "update",
+        "documentId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "1uFc0RmztEiY9tcsNGLe0bExBuhJ5Zxjp6j-J7WfYYjc"
+        },
+        "sheetName": {
+          "__rl": true,
+          "mode": "name",
+          "value": "Staff"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Staff_ID": "={{ $(\"Plan cancellation\").first().json.staff_id }}",
+            "Available": "Yes"
+          },
+          "matchingColumns": [
+            "Staff_ID"
+          ],
+          "schema": [
+            {
+              "id": "Staff_ID",
+              "displayName": "Staff_ID",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Available",
+              "displayName": "Available",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": false
+            }
+          ]
+        },
+        "options": {
+          "cellFormat": "RAW"
+        }
+      },
+      "retryOnFail": true,
+      "maxTries": 5,
+      "waitBetweenTries": 5000,
+      "id": "7bf6946f-3d6a-4871-9044-c4228e877c46",
+      "position": [
+        7680,
+        0
+      ]
+    },
+    {
+      "name": "Notify cancelled",
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1.4,
+      "alwaysOutputData": true,
+      "parameters": {
+        "source": "database",
+        "workflowId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "9q6k5zJyOyu8LfKa",
+          "cachedResultName": "Demo Traders - Notify Customer"
+        },
+        "workflowInputs": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "order_id": "={{ $(\"Plan cancellation\").first().json.order_id }}",
+            "event": "cancelled",
+            "customer_name": "={{ $(\"Plan cancellation\").first().json.customer_name }}",
+            "customer_email": "={{ $(\"Plan cancellation\").first().json.customer_email }}",
+            "customer_phone": "={{ $(\"Plan cancellation\").first().json.customer_phone }}",
+            "subject": "=Tu pedido {{ $(\"Plan cancellation\").first().json.order_id }} fue cancelado",
+            "message": "=Hola {{ $(\"Plan cancellation\").first().json.customer_name }}, tu pedido {{ $(\"Plan cancellation\").first().json.order_id }} fue cancelado. {{ $(\"Plan cancellation\").first().json.refund_pending ? \"Como ya tenías un pago registrado, nos comunicaremos contigo para devolverte tu dinero. \" : \"\" }}Si tienes alguna duda, responde este mensaje.\n\nDemo Traders"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "order_id",
+              "displayName": "order_id",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": false,
+              "type": "string"
+            },
+            {
+              "id": "event",
+              "displayName": "event",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": false,
+              "type": "string"
+            },
+            {
+              "id": "customer_name",
+              "displayName": "customer_name",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": false,
+              "type": "string"
+            },
+            {
+              "id": "customer_email",
+              "displayName": "customer_email",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": false,
+              "type": "string"
+            },
+            {
+              "id": "customer_phone",
+              "displayName": "customer_phone",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": false,
+              "type": "string"
+            },
+            {
+              "id": "subject",
+              "displayName": "subject",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": false,
+              "type": "string"
+            },
+            {
+              "id": "message",
+              "displayName": "message",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": false,
+              "type": "string"
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "mode": "once",
+        "options": {
+          "waitForSubWorkflow": true
+        }
+      },
+      "id": "75e3fad8-1f14-49e0-ac5b-53f7362ffbbd",
+      "position": [
+        7920,
+        0
+      ]
+    },
+    {
+      "name": "Log cancellation",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "uVqG7fQd8cxSfaMU",
+          "name": "order to delivery system"
+        }
+      },
+      "parameters": {
+        "resource": "sheet",
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "1uFc0RmztEiY9tcsNGLe0bExBuhJ5Zxjp6j-J7WfYYjc"
+        },
+        "sheetName": {
+          "__rl": true,
+          "mode": "name",
+          "value": "Activity_Log"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Time": "={{ $now.toFormat(\"yyyy-MM-dd HH:mm:ss\") }}",
+            "Agent": "Inventory",
+            "Action": "order_cancelled",
+            "Ref_ID": "={{ $(\"Plan cancellation\").first().json.order_id }}",
+            "Details": "={{ $(\"Plan cancellation\").first().json.message }}"
+          },
+          "schema": [
+            {
+              "id": "Time",
+              "displayName": "Time",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Agent",
+              "displayName": "Agent",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Action",
+              "displayName": "Action",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Ref_ID",
+              "displayName": "Ref_ID",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Details",
+              "displayName": "Details",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            }
+          ]
+        },
+        "options": {
+          "cellFormat": "RAW"
+        }
+      },
+      "retryOnFail": true,
+      "maxTries": 5,
+      "waitBetweenTries": 5000,
+      "id": "bba83a2f-47fd-4ff1-9ec6-63becbc4af23",
+      "position": [
+        8160,
+        0
+      ]
+    },
+    {
+      "name": "Order cancelled page",
+      "type": "n8n-nodes-base.form",
+      "typeVersion": 2.5,
+      "parameters": {
+        "operation": "completion",
+        "respondWith": "text",
+        "completionTitle": "Pedido cancelado",
+        "completionMessage": "={{ $(\"Plan cancellation\").first().json.message }}",
+        "options": {
+          "appendAttribution": false
+        }
+      },
+      "id": "860c3308-5eae-4791-8b18-b401feabcfab",
+      "position": [
+        8400,
+        0
+      ]
+    },
+    {
+      "name": "Log rejected cancellation",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "uVqG7fQd8cxSfaMU",
+          "name": "order to delivery system"
+        }
+      },
+      "parameters": {
+        "resource": "sheet",
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "1uFc0RmztEiY9tcsNGLe0bExBuhJ5Zxjp6j-J7WfYYjc"
+        },
+        "sheetName": {
+          "__rl": true,
+          "mode": "name",
+          "value": "Activity_Log"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Time": "={{ $now.toFormat(\"yyyy-MM-dd HH:mm:ss\") }}",
+            "Agent": "Inventory",
+            "Action": "cancellation_rejected",
+            "Ref_ID": "",
+            "Details": "={{ $json.message }}"
+          },
+          "schema": [
+            {
+              "id": "Time",
+              "displayName": "Time",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Agent",
+              "displayName": "Agent",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Action",
+              "displayName": "Action",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Ref_ID",
+              "displayName": "Ref_ID",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Details",
+              "displayName": "Details",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            }
+          ]
+        },
+        "options": {
+          "cellFormat": "RAW"
+        }
+      },
+      "retryOnFail": true,
+      "maxTries": 5,
+      "waitBetweenTries": 5000,
+      "id": "51f28343-db06-43c7-80d3-1e3d36faaf69",
+      "position": [
+        8640,
+        0
+      ]
+    },
+    {
+      "name": "Cancellation rejected page",
+      "type": "n8n-nodes-base.form",
+      "typeVersion": 2.5,
+      "parameters": {
+        "operation": "completion",
+        "respondWith": "text",
+        "completionTitle": "No se canceló",
+        "completionMessage": "={{ $(\"Plan cancellation\").first().json.message }}",
+        "options": {
+          "appendAttribution": false
+        }
+      },
+      "id": "3d616e94-93be-45e4-a102-31ebef16ab4d",
+      "position": [
+        8880,
+        0
+      ]
+    }
+  ],
+  "connections": {
+    "Stock movement form": {
+      "main": [
+        [
+          {
+            "node": "Read products for movement",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Read products for movement": {
+      "main": [
+        [
+          {
+            "node": "Read purchase requests",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Read purchase requests": {
+      "main": [
+        [
+          {
+            "node": "Read movements for movement",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Read movements for movement": {
+      "main": [
+        [
+          {
+            "node": "Plan stock movement",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Plan stock movement": {
+      "main": [
+        [
+          {
+            "node": "Movement valid?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Movement valid?": {
+      "main": [
+        [
+          {
+            "node": "Update product stock and cost",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Log rejected movement",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Update product stock and cost": {
+      "main": [
+        [
+          {
+            "node": "Save movement",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Save movement": {
+      "main": [
+        [
+          {
+            "node": "Linked purchase request?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Linked purchase request?": {
+      "main": [
+        [
+          {
+            "node": "Update purchase request",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Log stock movement",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Update purchase request": {
+      "main": [
+        [
+          {
+            "node": "Log stock movement",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Log stock movement": {
+      "main": [
+        [
+          {
+            "node": "Movement recorded page",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Log rejected movement": {
+      "main": [
+        [
+          {
+            "node": "Movement rejected page",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Cancel order form": {
+      "main": [
+        [
+          {
+            "node": "Read orders for cancel",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Read orders for cancel": {
+      "main": [
+        [
+          {
+            "node": "Read invoices for cancel",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Read invoices for cancel": {
+      "main": [
+        [
+          {
+            "node": "Read dispatch for cancel",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Read dispatch for cancel": {
+      "main": [
+        [
+          {
+            "node": "Read staff for cancel",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Read staff for cancel": {
+      "main": [
+        [
+          {
+            "node": "Read customers for cancel",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Read customers for cancel": {
+      "main": [
+        [
+          {
+            "node": "Read products for cancel",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Read products for cancel": {
+      "main": [
+        [
+          {
+            "node": "Plan cancellation",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Plan cancellation": {
+      "main": [
+        [
+          {
+            "node": "Cancellable?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Cancellable?": {
+      "main": [
+        [
+          {
+            "node": "Split restock lines",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Log rejected cancellation",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Split restock lines": {
+      "main": [
+        [
+          {
+            "node": "Return stock",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Return stock": {
+      "main": [
+        [
+          {
+            "node": "Save return movements",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Save return movements": {
+      "main": [
+        [
+          {
+            "node": "Back to one item",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Back to one item": {
+      "main": [
+        [
+          {
+            "node": "Mark order cancelled",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Mark order cancelled": {
+      "main": [
+        [
+          {
+            "node": "Has invoice?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Has invoice?": {
+      "main": [
+        [
+          {
+            "node": "Cancel invoice",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Has open delivery?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Cancel invoice": {
+      "main": [
+        [
+          {
+            "node": "Has open delivery?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Has open delivery?": {
+      "main": [
+        [
+          {
+            "node": "Cancel dispatch row",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Notify cancelled",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Cancel dispatch row": {
+      "main": [
+        [
+          {
+            "node": "Free rider",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Free rider": {
+      "main": [
+        [
+          {
+            "node": "Notify cancelled",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Notify cancelled": {
+      "main": [
+        [
+          {
+            "node": "Log cancellation",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Log cancellation": {
+      "main": [
+        [
+          {
+            "node": "Order cancelled page",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Log rejected cancellation": {
+      "main": [
+        [
+          {
+            "node": "Cancellation rejected page",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "timezone": "America/Santo_Domingo",
+    "availableInMCP": true
+  },
+  "meta": null,
+  "nodeGroups": [],
+  "versionId": "ce55c6f9-defc-4e1a-b014-978f72340f51",
+  "activeVersionId": "ce55c6f9-defc-4e1a-b014-978f72340f51",
+  "sourceWorkflowId": null,
+  "versionMetadata": {
+    "name": null,
+    "description": null
+  }
+}

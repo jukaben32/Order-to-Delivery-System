@@ -1,5 +1,5 @@
 {
-  "updatedAt": "2026-11-05T02:22:05.964Z",
+  "updatedAt": "2026-11-05T03:08:00.189Z",
   "createdAt": "2026-11-05T00:18:49.149Z",
   "id": "NfjlqnvpnWFX7lYa",
   "name": "Demo Traders - Dispatch",
@@ -423,7 +423,7 @@
             "Agent": "Dispatch",
             "Action": "order_dispatched",
             "Ref_ID": "={{ $(\"Pick first free rider\").first().json.order_id }}",
-            "Details": "={{ $(\"Next dispatch number\").first().json.Dispatch_ID }} assigned to {{ $(\"Pick first free rider\").first().json.rider_name }} ({{ $(\"Pick first free rider\").first().json.vehicle }}); customer emailed"
+            "Details": "={{ $(\"Next dispatch number\").first().json.Dispatch_ID }} assigned to {{ $(\"Pick first free rider\").first().json.rider_name }} ({{ $(\"Pick first free rider\").first().json.vehicle }}); customer notified (see Notify)"
           },
           "schema": [
             {
@@ -1189,7 +1189,7 @@
             "Agent": "Dispatch",
             "Action": "order_delivered",
             "Ref_ID": "={{ $(\"Find delivery\").first().json.Order_ID }}",
-            "Details": "={{ $(\"Find delivery\").first().json.message }} Customer emailed."
+            "Details": "={{ $(\"Find delivery\").first().json.message }} Customer notified (see Notify)."
           },
           "schema": [
             {
@@ -1559,7 +1559,8 @@
         "options": {
           "waitForSubWorkflow": true
         }
-      }
+      },
+      "alwaysOutputData": true
     },
     {
       "id": "5e8ee521-ba8a-4e0b-96cd-438adeaf12b8",
@@ -1662,7 +1663,8 @@
         "options": {
           "waitForSubWorkflow": true
         }
-      }
+      },
+      "alwaysOutputData": true
     }
   ],
   "connections": {
@@ -2017,11 +2019,11 @@
     "builderVariant": "mcp"
   },
   "nodeGroups": [],
-  "versionId": "bb5bfa59-d881-4b6c-af15-0e567eeb36e0",
-  "activeVersionId": "bb5bfa59-d881-4b6c-af15-0e567eeb36e0",
+  "versionId": "1bb9634f-13ab-4a72-8755-2950d99bda9b",
+  "activeVersionId": "1bb9634f-13ab-4a72-8755-2950d99bda9b",
   "sourceWorkflowId": null,
   "versionMetadata": {
-    "name": "Dispatch: notify via Notify Customer, email optional, Spanish text",
-    "description": "Added nodes: Notify on the way, Notify delivered\nRemoved nodes: Email customer on the way, Email customer delivered\nUpdated nodes: Pick first free rider, Find delivery, Find waiting order\nConnections: 4 added, 4 removed"
+    "name": "Notify nodes always output",
+    "description": "Updated nodes: Notify on the way, Notify delivered"
   }
 }

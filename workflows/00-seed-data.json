@@ -1,5 +1,5 @@
 {
-  "updatedAt": "2026-11-05T00:23:14.525Z",
+  "updatedAt": "2026-11-05T02:59:46.556Z",
   "createdAt": "2026-11-05T00:11:42.873Z",
   "id": "tKiNnkNq2V6IAbS3",
   "name": "Demo Traders - Seed Data",
@@ -134,6 +134,15 @@
               "display": true,
               "type": "string",
               "canBeUsedToMatch": true
+            },
+            {
+              "id": "Cost",
+              "displayName": "Cost",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "number",
+              "canBeUsedToMatch": true
             }
           ]
         },
@@ -259,6 +268,22 @@
           "name": "order to delivery system"
         }
       }
+    },
+    {
+      "id": "03f6d037-db4c-4d49-bcc7-ae9806868c40",
+      "name": "Add sample cost",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        700,
+        200
+      ],
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "language": "javaScript",
+        "jsCode": "return $input.all().map(function (i) { return { json: Object.assign({}, i.json, { Cost: Math.round(Number(i.json.Price) * 0.72) }) }; });"
+      },
+      "notes": "Why Code: adds a sample unit cost (72% of the price, rounded) so inventory value and margin can be calculated. Replace with your real costs in the Products sheet."
     }
   ],
   "connections": {
@@ -293,6 +318,17 @@
       "main": [
         [
           {
+            "node": "Add sample cost",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Add sample cost": {
+      "main": [
+        [
+          {
             "node": "Upsert products",
             "type": "main",
             "index": 0
@@ -311,11 +347,11 @@
     "builderVariant": "mcp"
   },
   "nodeGroups": [],
-  "versionId": "cc653b9a-67e1-4eca-9435-776bf4c8c439",
+  "versionId": "1ebc1c34-ff32-4ee6-8ffb-642c973a5ca4",
   "activeVersionId": null,
   "sourceWorkflowId": null,
   "versionMetadata": {
-    "name": "Seed 50 typical colmado products",
-    "description": "Updated nodes: Build 50 colmado products\nConnections: 2 added, 2 removed"
+    "name": "Seed: add sample unit cost",
+    "description": "Added nodes: Add sample cost\nUpdated nodes: Upsert products\nConnections: 2 added, 1 removed"
   }
 }

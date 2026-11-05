@@ -1,5 +1,5 @@
 {
-  "updatedAt": "2026-11-05T00:26:58.985Z",
+  "updatedAt": "2026-11-05T03:07:59.576Z",
   "createdAt": "2026-11-05T00:15:17.529Z",
   "id": "fGGKvzd1Fj1g1eXZ",
   "name": "Demo Traders - Inventory",
@@ -65,7 +65,7 @@
       "parameters": {
         "mode": "runOnceForAllItems",
         "language": "javaScript",
-        "jsCode": "const input = $('Inventory trigger').first().json;\nconst items = input.items || [];\nconst products = $input.all().map(function (i) { return i.json; });\nconst out = [];\nitems.forEach(function (it) {\n  const p = products.find(function (x) { return String(x.SKU).trim() === String(it.sku).trim(); });\n  if (!p) { return; }\n  const qty = Number(it.qty) || 0;\n  const stock = Number(p.Stock) || 0;\n  const level = Number(p.Reorder_Level) || 0;\n  const newStock = stock - qty;\n  out.push({ json: { order_id: input.order_id, sku: String(p.SKU), name: p.Name, qty: qty, old_stock: stock, new_stock: newStock, reorder_level: level, supplier_email: p.Supplier_Email, low: newStock < level, pr_qty: 4 * level } });\n});\nreturn out;"
+        "jsCode": "const input = $('Inventory trigger').first().json;\nconst items = input.items || [];\nconst products = $input.all().map(function (i) { return i.json; });\nconst out = [];\nitems.forEach(function (it) {\n  const p = products.find(function (x) { return String(x.SKU).trim() === String(it.sku).trim(); });\n  if (!p) { return; }\n  const qty = Number(it.qty) || 0;\n  const stock = Number(p.Stock) || 0;\n  const level = Number(p.Reorder_Level) || 0;\n  const cost = Number(p.Cost) || 0;\n  const newStock = stock - qty;\n  out.push({ json: { order_id: input.order_id, sku: String(p.SKU), name: p.Name, qty: qty, old_stock: stock, new_stock: newStock, reorder_level: level, supplier_email: p.Supplier_Email, low: newStock < level, pr_qty: 4 * level, cost: cost } });\n});\nreturn out;"
       },
       "notes": "Why Code: matches ordered SKUs to product rows and does the stock subtraction in plain JS. Sheets often returns numbers as text, so values are converted with Number()."
     },
@@ -430,6 +430,185 @@
       "retryOnFail": true,
       "maxTries": 5,
       "waitBetweenTries": 5000
+    },
+    {
+      "id": "078af89c-0f21-4d1b-9e21-0d3b8efe7887",
+      "name": "Build movements",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1100,
+        300
+      ],
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "language": "javaScript",
+        "jsCode": "const stamp = $now.toFormat('yyyyMMddHHmmss');\nconst rnd = Math.floor(100 + Math.random() * 900);\nreturn $('Compute new stock').all().map(function (i, idx) {\n  const r = i.json;\n  return { json: { Movement_ID: 'MOV-' + stamp + '-' + rnd + '-' + (idx + 1), Time: $now.toFormat('yyyy-MM-dd HH:mm:ss'), SKU: r.sku, Product: r.name, Type: 'SALE', Qty: -r.qty, Stock_After: r.new_stock, Unit_Cost: r.cost, Value: Math.round(-r.qty * r.cost * 100) / 100, Ref_ID: r.order_id, Notes: '', Source: 'Order' } };\n});"
+      },
+      "notes": "Why Code: one ledger row (kardex) per product sold: negative quantity, stock after the sale and the unit cost at that moment, so cost of goods sold can be calculated."
+    },
+    {
+      "id": "ed4e966f-af27-48c4-a7ca-56528e666fb4",
+      "name": "Save movements",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        1300,
+        300
+      ],
+      "parameters": {
+        "resource": "sheet",
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "1uFc0RmztEiY9tcsNGLe0bExBuhJ5Zxjp6j-J7WfYYjc"
+        },
+        "sheetName": {
+          "__rl": true,
+          "mode": "name",
+          "value": "Inventory_Movements"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Movement_ID": "={{ $json.Movement_ID }}",
+            "Time": "={{ $json.Time }}",
+            "SKU": "={{ $json.SKU }}",
+            "Product": "={{ $json.Product }}",
+            "Type": "={{ $json.Type }}",
+            "Qty": "={{ $json.Qty }}",
+            "Stock_After": "={{ $json.Stock_After }}",
+            "Unit_Cost": "={{ $json.Unit_Cost }}",
+            "Value": "={{ $json.Value }}",
+            "Ref_ID": "={{ $json.Ref_ID }}",
+            "Notes": "={{ $json.Notes }}",
+            "Source": "={{ $json.Source }}"
+          },
+          "schema": [
+            {
+              "id": "Movement_ID",
+              "displayName": "Movement_ID",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Time",
+              "displayName": "Time",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "SKU",
+              "displayName": "SKU",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Product",
+              "displayName": "Product",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Type",
+              "displayName": "Type",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Qty",
+              "displayName": "Qty",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Stock_After",
+              "displayName": "Stock_After",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Unit_Cost",
+              "displayName": "Unit_Cost",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Value",
+              "displayName": "Value",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Ref_ID",
+              "displayName": "Ref_ID",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Notes",
+              "displayName": "Notes",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Source",
+              "displayName": "Source",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            }
+          ]
+        },
+        "options": {
+          "cellFormat": "RAW"
+        }
+      },
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "uVqG7fQd8cxSfaMU",
+          "name": "order to delivery system"
+        }
+      },
+      "retryOnFail": true,
+      "maxTries": 5,
+      "waitBetweenTries": 5000
     }
   ],
   "connections": {
@@ -460,17 +639,6 @@
         [
           {
             "node": "Update stock",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Update stock": {
-      "main": [
-        [
-          {
-            "node": "Build inventory log",
             "type": "main",
             "index": 0
           }
@@ -531,6 +699,39 @@
           }
         ]
       ]
+    },
+    "Update stock": {
+      "main": [
+        [
+          {
+            "node": "Build movements",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Build movements": {
+      "main": [
+        [
+          {
+            "node": "Save movements",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Save movements": {
+      "main": [
+        [
+          {
+            "node": "Build inventory log",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
     }
   },
   "settings": {
@@ -543,11 +744,11 @@
     "builderVariant": "mcp"
   },
   "nodeGroups": [],
-  "versionId": "dfac900e-b6b7-4cc3-8f6a-fd994e3b8f40",
-  "activeVersionId": "dfac900e-b6b7-4cc3-8f6a-fd994e3b8f40",
+  "versionId": "eb757c78-762a-43d7-84d6-261f2ce284b8",
+  "activeVersionId": "eb757c78-762a-43d7-84d6-261f2ce284b8",
   "sourceWorkflowId": null,
   "versionMetadata": {
-    "name": "Retry Sheets nodes on rate limit",
-    "description": "Updated nodes: Read products, Update stock, Log stock update, Create purchase request, Log purchase request"
+    "name": "Retry settings on Save movements",
+    "description": "Updated nodes: Save movements"
   }
 }

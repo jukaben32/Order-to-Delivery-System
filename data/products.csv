@@ -1,51 +1,51 @@
-SKU,Name,Category,Unit,Price,Stock,Reorder_Level,Supplier_Email
-RICE-5KG,Arroz selecto 5 kg,Granos,funda,1800,40,10,proveedor@example.com
-OIL-1L,Aceite de cocina 1 L,Aceites,botella,2500,30,8,proveedor@example.com
-SUGAR-2KG,Azúcar 2 kg,Despensa,funda,900,35,10,proveedor@example.com
-FLOUR-2KG,Harina de trigo 2 kg,Despensa,funda,750,25,8,proveedor@example.com
-BEANS-1KG,Habichuelas rojas 1 kg,Granos,funda,1100,30,8,proveedor@example.com
-SPAGH-500G,Espaguetis 500 g,Pastas,paquete,450,50,15,proveedor@example.com
-SALT-1KG,Sal 1 kg,Despensa,paquete,200,40,10,proveedor@example.com
-MILK-1L,Leche UHT 1 L,Lácteos,cartón,650,36,12,proveedor@example.com
-WASH-1KG,Detergente en polvo 1 kg,Limpieza,funda,1250,6,5,proveedor@example.com
-TOMATO-400G,Pasta de tomate 400 g,Enlatados,lata,300,45,12,proveedor@example.com
-BEANS-BLK-1KG,Habichuelas negras 1 kg,Granos,funda,1050,25,8,proveedor@example.com
-LENTIL-1KG,Lentejas 1 kg,Granos,funda,950,20,6,proveedor@example.com
-PIGEON-PEA-1KG,Guandules secos 1 kg,Granos,funda,1000,20,6,proveedor@example.com
-CORN-MEAL-1KG,Harina de maíz 1 kg,Despensa,funda,600,25,8,proveedor@example.com
-OATS-400G,Avena en hojuelas 400 g,Desayuno,paquete,520,25,8,proveedor@example.com
-COFFEE-454G,Café molido 454 g,Desayuno,paquete,1300,30,8,proveedor@example.com
-CHOCO-454G,Chocolate de cacao en barra 454 g,Desayuno,paquete,900,20,6,proveedor@example.com
-BUTTER-227G,Mantequilla 227 g,Lácteos,paquete,700,20,6,proveedor@example.com
-MARGARINE-200G,Margarina 200 g,Lácteos,paquete,350,25,8,proveedor@example.com
-CHEESE-FRY-LB,Queso para freír 1 lb,Lácteos,libra,450,20,6,proveedor@example.com
-SALAMI-LB,Salami dominicano 1 lb,Embutidos,libra,480,25,8,proveedor@example.com
-MORTADELA-LB,Mortadela 1 lb,Embutidos,libra,300,20,6,proveedor@example.com
-EGGS-30,Huevos cartón de 30,Huevos,cartón,1100,24,8,proveedor@example.com
-BREAD-WATER-6,Pan de agua funda 6 uds,Panadería,funda,150,30,10,proveedor@example.com
-SARDINE-125G,Sardinas en lata 125 g,Enlatados,lata,120,60,15,proveedor@example.com
-TUNA-170G,Atún en lata 170 g,Enlatados,lata,250,40,12,proveedor@example.com
-SAUCE-TOM-8OZ,Salsa de tomate 8 oz,Condimentos,frasco,180,40,12,proveedor@example.com
-SAZON-COMP,Sazón completo,Condimentos,frasco,150,40,12,proveedor@example.com
-ADOBO-8OZ,Adobo 8 oz,Condimentos,frasco,200,30,10,proveedor@example.com
-OREGANO-30G,Orégano 30 g,Condimentos,paquete,80,40,10,proveedor@example.com
-GARLIC-LB,Ajo 1 lb,Vegetales,libra,220,25,8,proveedor@example.com
-ONION-LB,Cebolla 1 lb,Vegetales,libra,70,50,15,proveedor@example.com
-TOMATO-LB,Tomate fresco 1 lb,Vegetales,libra,90,40,12,proveedor@example.com
-PLANTAIN-UN,Plátano verde unidad,Víveres,unidad,45,80,20,proveedor@example.com
-YUCA-LB,Yuca 1 lb,Víveres,libra,40,50,15,proveedor@example.com
-YAM-LB,Ñame 1 lb,Víveres,libra,55,40,12,proveedor@example.com
-BANANA-LB,Guineos 1 lb,Frutas,libra,35,50,15,proveedor@example.com
-LEMON-LB,Limón agrio 1 lb,Frutas,libra,60,30,10,proveedor@example.com
-MALTA-355,Malta morena 355 ml,Bebidas,botella,70,72,24,proveedor@example.com
-COLA-2L,Refresco cola 2 L,Bebidas,botella,150,48,12,proveedor@example.com
-JUICE-1L,Jugo de naranja 1 L,Bebidas,cartón,220,30,10,proveedor@example.com
-WATER-5L,Agua purificada 5 L,Bebidas,botella,120,40,12,proveedor@example.com
-BEER-12OZ,Cerveza 12 oz,Bebidas,botella,110,96,24,proveedor@example.com
-ICE-BAG,Hielo funda,Bebidas,funda,60,40,10,proveedor@example.com
-DISH-SOAP-500,Lavaplatos 500 ml,Limpieza,botella,250,30,8,proveedor@example.com
-BLEACH-1L,Cloro 1 L,Limpieza,botella,150,30,8,proveedor@example.com
-TP-4,Papel higiénico 4 rollos,Higiene,paquete,280,35,10,proveedor@example.com
-TRASHBAG-10,Fundas de basura 10 uds,Limpieza,paquete,180,30,8,proveedor@example.com
-SOAP-BAR,Jabón de baño,Higiene,unidad,90,60,15,proveedor@example.com
-TOOTHPASTE-75,Pasta dental 75 ml,Higiene,tubo,200,40,10,proveedor@example.com
+SKU,Name,Category,Unit,Price,Stock,Reorder_Level,Supplier_Email,Cost
+RICE-5KG,Arroz selecto 5 kg,Granos,funda,1800,40,10,proveedor@example.com,1296
+OIL-1L,Aceite de cocina 1 L,Aceites,botella,2500,30,8,proveedor@example.com,1800
+SUGAR-2KG,Azúcar 2 kg,Despensa,funda,900,35,10,proveedor@example.com,648
+FLOUR-2KG,Harina de trigo 2 kg,Despensa,funda,750,25,8,proveedor@example.com,540
+BEANS-1KG,Habichuelas rojas 1 kg,Granos,funda,1100,30,8,proveedor@example.com,792
+SPAGH-500G,Espaguetis 500 g,Pastas,paquete,450,50,15,proveedor@example.com,324
+SALT-1KG,Sal 1 kg,Despensa,paquete,200,40,10,proveedor@example.com,144
+MILK-1L,Leche UHT 1 L,Lácteos,cartón,650,36,12,proveedor@example.com,468
+WASH-1KG,Detergente en polvo 1 kg,Limpieza,funda,1250,6,5,proveedor@example.com,900
+TOMATO-400G,Pasta de tomate 400 g,Enlatados,lata,300,45,12,proveedor@example.com,216
+BEANS-BLK-1KG,Habichuelas negras 1 kg,Granos,funda,1050,25,8,proveedor@example.com,756
+LENTIL-1KG,Lentejas 1 kg,Granos,funda,950,20,6,proveedor@example.com,684
+PIGEON-PEA-1KG,Guandules secos 1 kg,Granos,funda,1000,20,6,proveedor@example.com,720
+CORN-MEAL-1KG,Harina de maíz 1 kg,Despensa,funda,600,25,8,proveedor@example.com,432
+OATS-400G,Avena en hojuelas 400 g,Desayuno,paquete,520,25,8,proveedor@example.com,374
+COFFEE-454G,Café molido 454 g,Desayuno,paquete,1300,30,8,proveedor@example.com,936
+CHOCO-454G,Chocolate de cacao en barra 454 g,Desayuno,paquete,900,20,6,proveedor@example.com,648
+BUTTER-227G,Mantequilla 227 g,Lácteos,paquete,700,20,6,proveedor@example.com,504
+MARGARINE-200G,Margarina 200 g,Lácteos,paquete,350,25,8,proveedor@example.com,252
+CHEESE-FRY-LB,Queso para freír 1 lb,Lácteos,libra,450,20,6,proveedor@example.com,324
+SALAMI-LB,Salami dominicano 1 lb,Embutidos,libra,480,25,8,proveedor@example.com,346
+MORTADELA-LB,Mortadela 1 lb,Embutidos,libra,300,20,6,proveedor@example.com,216
+EGGS-30,Huevos cartón de 30,Huevos,cartón,1100,24,8,proveedor@example.com,792
+BREAD-WATER-6,Pan de agua funda 6 uds,Panadería,funda,150,30,10,proveedor@example.com,108
+SARDINE-125G,Sardinas en lata 125 g,Enlatados,lata,120,60,15,proveedor@example.com,86
+TUNA-170G,Atún en lata 170 g,Enlatados,lata,250,40,12,proveedor@example.com,180
+SAUCE-TOM-8OZ,Salsa de tomate 8 oz,Condimentos,frasco,180,40,12,proveedor@example.com,130
+SAZON-COMP,Sazón completo,Condimentos,frasco,150,40,12,proveedor@example.com,108
+ADOBO-8OZ,Adobo 8 oz,Condimentos,frasco,200,30,10,proveedor@example.com,144
+OREGANO-30G,Orégano 30 g,Condimentos,paquete,80,40,10,proveedor@example.com,58
+GARLIC-LB,Ajo 1 lb,Vegetales,libra,220,25,8,proveedor@example.com,158
+ONION-LB,Cebolla 1 lb,Vegetales,libra,70,50,15,proveedor@example.com,50
+TOMATO-LB,Tomate fresco 1 lb,Vegetales,libra,90,40,12,proveedor@example.com,65
+PLANTAIN-UN,Plátano verde unidad,Víveres,unidad,45,80,20,proveedor@example.com,32
+YUCA-LB,Yuca 1 lb,Víveres,libra,40,50,15,proveedor@example.com,29
+YAM-LB,Ñame 1 lb,Víveres,libra,55,40,12,proveedor@example.com,40
+BANANA-LB,Guineos 1 lb,Frutas,libra,35,50,15,proveedor@example.com,25
+LEMON-LB,Limón agrio 1 lb,Frutas,libra,60,30,10,proveedor@example.com,43
+MALTA-355,Malta morena 355 ml,Bebidas,botella,70,72,24,proveedor@example.com,50
+COLA-2L,Refresco cola 2 L,Bebidas,botella,150,48,12,proveedor@example.com,108
+JUICE-1L,Jugo de naranja 1 L,Bebidas,cartón,220,30,10,proveedor@example.com,158
+WATER-5L,Agua purificada 5 L,Bebidas,botella,120,40,12,proveedor@example.com,86
+BEER-12OZ,Cerveza 12 oz,Bebidas,botella,110,96,24,proveedor@example.com,79
+ICE-BAG,Hielo funda,Bebidas,funda,60,40,10,proveedor@example.com,43
+DISH-SOAP-500,Lavaplatos 500 ml,Limpieza,botella,250,30,8,proveedor@example.com,180
+BLEACH-1L,Cloro 1 L,Limpieza,botella,150,30,8,proveedor@example.com,108
+TP-4,Papel higiénico 4 rollos,Higiene,paquete,280,35,10,proveedor@example.com,202
+TRASHBAG-10,Fundas de basura 10 uds,Limpieza,paquete,180,30,8,proveedor@example.com,130
+SOAP-BAR,Jabón de baño,Higiene,unidad,90,60,15,proveedor@example.com,65
+TOOTHPASTE-75,Pasta dental 75 ml,Higiene,tubo,200,40,10,proveedor@example.com,144

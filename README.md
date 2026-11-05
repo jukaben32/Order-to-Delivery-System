@@ -33,11 +33,12 @@ flowchart LR
 | 6 | **Billing** | No | Siguiente factura (`INV-1001`…), vencimiento a 7 días y aviso al cliente por correo o WhatsApp. Incluye el formulario "Record payment". |
 | 7 | **Dispatch** | No | Primer repartidor con `Available = Yes`. Si no hay ninguno, el pedido espera y queda en el registro. Incluye el formulario "Mark delivered", que libera al repartidor y asigna el pedido en espera más antiguo. |
 
-Y cuatro flujos de apoyo:
+Y cinco flujos de apoyo:
 
 | Flujo | IA | Qué hace |
 |---|---|---|
 | **Notify Customer** | No | Único punto de salida de los avisos al cliente (factura, "en camino", "entregado"). Manda correo si el cliente dejó uno; si no, guarda el mensaje como `whatsapp_pending` en `Activity_Log`, con el teléfono y el texto listos para enviar por WhatsApp. |
+| **Inventory Control** | No | Dos formularios del personal: **movimientos de inventario** (entradas de mercancía con costo promedio, devoluciones, ajustes por conteo y mermas) y **cancelar pedido** (devuelve el stock, cancela la factura, libera al repartidor y avisa al cliente). Todo queda en el kardex. Ver [docs/inventario-y-contabilidad.md](docs/inventario-y-contabilidad.md). |
 | **Create Order** | No | Núcleo compartido de pedidos: valida los datos, calcula los precios en código, guarda cliente y pedido y llama a Inventory, Billing y Dispatch. Lo usa la tienda web. |
 | **Storefront** | No | Sirve la tienda web en `/webhook/tienda` y su API (`productos` y `pedido`). Detalles en [docs/tienda.md](docs/tienda.md). |
 | **Seed Data** | No | Carga 50 productos típicos de colmado y 3 repartidores. Se puede repetir sin duplicar filas. |
@@ -47,11 +48,16 @@ Todos los flujos escriben en `Activity_Log`.
 ## Estructura del repositorio
 
 ```
-workflows/   Exportación JSON de los 11 flujos de n8n
+workflows/   Exportación JSON de los 12 flujos de n8n
 storefront/  Tienda web (index.html) y el script que la empaqueta en n8n
 data/        Productos y repartidores de ejemplo, y estructura de la hoja
-docs/        Instalación, Google Cloud, tienda web, hoja de ruta y pruebas
+tools/       Scripts que generan los flujos de n8n a partir de código
+docs/        Instalación, Google Cloud, tienda web, inventario y contabilidad, hoja de ruta y pruebas
 ```
+
+## Inventario y contabilidad
+
+El inventario baja al **confirmar** cada pedido y cada cambio de stock deja una fila en el kardex (`Inventory_Movements`), con tipo, cantidad, saldo, costo y referencia. Hay costo por producto (costo promedio ponderado), valor del inventario, costo de ventas y margen. El informe diario del dueño trae el resumen contable. Detalles y limitaciones en [docs/inventario-y-contabilidad.md](docs/inventario-y-contabilidad.md).
 
 ## Tienda web
 
@@ -65,7 +71,7 @@ Con n8n encendido, la tienda está en `http://localhost:5678/webhook/tienda`: ca
    - Google Sheets OAuth2 y Gmail OAuth2.
    - Anthropic (tu API key).
    - Basic Auth para los formularios del personal.
-4. **Importa** los JSON de `workflows/` en este orden: Notify Customer, Inventory, Billing, Dispatch, Create Order, Storefront, Support Agent, Order Agent, Front Desk Agent, Manager Agent, Seed Data.
+4. **Importa** los JSON de `workflows/` en este orden: Notify Customer, Inventory, Billing, Dispatch, Inventory Control, Create Order, Storefront, Support Agent, Order Agent, Front Desk Agent, Manager Agent, Seed Data.
 5. **Reconecta las referencias** (los IDs cambian al importar):
    - En cada nodo de Google Sheets: elige tu hoja y tus credenciales.
    - En Order Agent y en Create Order: los nodos `Call Inventory`, `Call Billing` y `Call Dispatch`.
@@ -86,6 +92,8 @@ Los tres formularios están protegidos con Basic Auth y son locales a tu instanc
 | Record payment | `/form/demo-traders-record-payment` | Caja |
 | Mark delivered | `/form/demo-traders-mark-delivered` | Repartidores |
 | Send report now | `/form/demo-traders-send-report` | Dueño |
+| Movimiento de inventario | `/form/demo-traders-stock-movement` | Almacén |
+| Cancelar pedido | `/form/demo-traders-cancel-order` | Caja o dueño |
 
 Para usarlos desde el móvil, n8n debe ser accesible desde internet (túnel o servidor).
 

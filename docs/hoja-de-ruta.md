@@ -23,7 +23,10 @@ Lo que falta para llevar el concepto a producción.
 - Cuentas de cliente e historial de pedidos.
 - Horarios, zonas de entrega y costo de envío.
 - Panel para el dueño y para los operadores de pedidos.
-- Detectar pedidos facturados sin repartidor (hoy el informe nocturno no los marca).
+- Facturación fiscal: ITBIS y comprobantes fiscales (NCF) con un sistema autorizado, y notas de crédito reales para las cancelaciones.
+- Devolución de dinero automática (por ejemplo con Stripe) cuando se cancela una factura pagada.
+- Alertas de stock bajo también después de mermas y ajustes (hoy solo las ventas generan solicitud de compra).
+- Inventario por lotes y fechas de vencimiento.
 
 ## 5. Seguridad
 - Límite de uso y verificación anti-bots en la tienda y el chat.

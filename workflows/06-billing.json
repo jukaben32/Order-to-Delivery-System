@@ -1,5 +1,5 @@
 {
-  "updatedAt": "2026-11-05T02:21:42.850Z",
+  "updatedAt": "2026-11-05T03:07:59.818Z",
   "createdAt": "2026-11-05T00:17:44.432Z",
   "id": "rWiEuk09Jwbn2sqb",
   "name": "Demo Traders - Billing",
@@ -268,7 +268,7 @@
             "Agent": "Billing",
             "Action": "invoice_created",
             "Ref_ID": "={{ $(\"Next invoice number\").first().json.Invoice_No }}",
-            "Details": "=Order {{ $(\"Next invoice number\").first().json.Order_ID }}; amount {{ $(\"Next invoice number\").first().json.Amount }}; due {{ $(\"Next invoice number\").first().json.Due_Date }}; invoice email sent"
+            "Details": "=Order {{ $(\"Next invoice number\").first().json.Order_ID }}; amount {{ $(\"Next invoice number\").first().json.Amount }}; due {{ $(\"Next invoice number\").first().json.Due_Date }}; customer notified (see Notify)"
           },
           "schema": [
             {
@@ -515,7 +515,7 @@
       "parameters": {
         "mode": "runOnceForAllItems",
         "language": "javaScript",
-        "jsCode": "const form = $('Record payment form').first().json;\nconst wanted = String(form.Invoice_No || '').trim().toUpperCase();\nconst inv = $('Read invoices for payment').all().map(function (i) { return i.json; }).find(function (r) { return String(r.Invoice_No || '').toUpperCase() === wanted; });\nconst payments = $input.all().map(function (i) { return i.json; }).filter(function (r) { return r.Payment_ID; });\nconst amount = Number(form.Amount);\nif (!inv) { return [{ json: { ok: false, Invoice_No: wanted, message: 'Invoice ' + wanted + ' was not found. Nothing was recorded.' } }]; }\nif (String(inv.Status) === 'Paid') { return [{ json: { ok: false, Invoice_No: inv.Invoice_No, message: 'Invoice ' + inv.Invoice_No + ' is already fully paid. Nothing was recorded.' } }]; }\nif (!(amount > 0)) { return [{ json: { ok: false, Invoice_No: inv.Invoice_No, message: 'The amount must be greater than zero. Nothing was recorded.' } }]; }\nconst due = Number(inv.Amount) || 0;\nconst before = payments.filter(function (p) { return String(p.Invoice_No) === String(inv.Invoice_No); }).reduce(function (s, p) { return s + (Number(p.Amount) || 0); }, 0);\nconst paid = before + amount;\nconst status = paid >= due ? 'Paid' : 'Partial';\nconst balance = Math.max(due - paid, 0);\nlet max = 1000;\npayments.forEach(function (p) { const m = String(p.Payment_ID).match(/^PAY-(\\d+)$/); if (m && Number(m[1]) > max) { max = Number(m[1]); } });\nconst pid = 'PAY-' + (max + 1);\nconst msg = 'Payment ' + pid + ' of RD$ ' + amount + ' recorded. Invoice ' + inv.Invoice_No + ' is now ' + status + (balance > 0 ? ' (balance RD$ ' + balance + ')' : '') + '.';\nreturn [{ json: { ok: true, Payment_ID: pid, Invoice_No: inv.Invoice_No, Order_ID: inv.Order_ID, Date: $now.toFormat('yyyy-MM-dd'), Amount: amount, Method: form.Method, Status: status, balance: balance, message: msg } }];"
+        "jsCode": "const form = $('Record payment form').first().json;\nconst wanted = String(form.Invoice_No || '').trim().toUpperCase();\nconst inv = $('Read invoices for payment').all().map(function (i) { return i.json; }).find(function (r) { return String(r.Invoice_No || '').toUpperCase() === wanted; });\nconst payments = $input.all().map(function (i) { return i.json; }).filter(function (r) { return r.Payment_ID; });\nconst amount = Number(form.Amount);\nif (!inv) { return [{ json: { ok: false, Invoice_No: wanted, message: 'Invoice ' + wanted + ' was not found. Nothing was recorded.' } }]; }\nif (String(inv.Status) === 'Paid') { return [{ json: { ok: false, Invoice_No: inv.Invoice_No, message: 'Invoice ' + inv.Invoice_No + ' is already fully paid. Nothing was recorded.' } }]; }\nif (String(inv.Status) === 'Cancelled' || String(inv.Status) === 'Refund pending') { return [{ json: { ok: false, Invoice_No: inv.Invoice_No, message: 'Invoice ' + inv.Invoice_No + ' is cancelled (' + inv.Status + '). Nothing was recorded.' } }]; }\nif (!(amount > 0)) { return [{ json: { ok: false, Invoice_No: inv.Invoice_No, message: 'The amount must be greater than zero. Nothing was recorded.' } }]; }\nconst due = Number(inv.Amount) || 0;\nconst before = payments.filter(function (p) { return String(p.Invoice_No) === String(inv.Invoice_No); }).reduce(function (s, p) { return s + (Number(p.Amount) || 0); }, 0);\nconst paid = before + amount;\nconst status = paid >= due ? 'Paid' : 'Partial';\nconst balance = Math.max(due - paid, 0);\nlet max = 1000;\npayments.forEach(function (p) { const m = String(p.Payment_ID).match(/^PAY-(\\d+)$/); if (m && Number(m[1]) > max) { max = Number(m[1]); } });\nconst pid = 'PAY-' + (max + 1);\nconst msg = 'Payment ' + pid + ' of RD$ ' + amount + ' recorded. Invoice ' + inv.Invoice_No + ' is now ' + status + (balance > 0 ? ' (balance RD$ ' + balance + ')' : '') + '.';\nreturn [{ json: { ok: true, Payment_ID: pid, Invoice_No: inv.Invoice_No, Order_ID: inv.Order_ID, Date: $now.toFormat('yyyy-MM-dd'), Amount: amount, Method: form.Method, Status: status, balance: balance, message: msg } }];"
       },
       "notes": "Why Code: looks the invoice up case-insensitively, adds up earlier payments, decides Paid vs Partial and builds the next PAY number. No AI involved in money."
     },
@@ -1101,7 +1101,8 @@
         "options": {
           "waitForSubWorkflow": true
         }
-      }
+      },
+      "alwaysOutputData": true
     }
   ],
   "connections": {
@@ -1310,11 +1311,11 @@
     "builderVariant": "mcp"
   },
   "nodeGroups": [],
-  "versionId": "64f8e835-0dbd-47ab-8e96-b99f7c25f59a",
-  "activeVersionId": "64f8e835-0dbd-47ab-8e96-b99f7c25f59a",
+  "versionId": "2a443d59-d991-4635-a80b-3820f58ed720",
+  "activeVersionId": "2a443d59-d991-4635-a80b-3820f58ed720",
   "sourceWorkflowId": null,
   "versionMetadata": {
-    "name": "Billing: notify via Notify Customer, email optional, Spanish text",
-    "description": "Added nodes: Notify invoice\nRemoved nodes: Email invoice\nUpdated nodes: Next invoice number\nConnections: 2 added, 2 removed"
+    "name": "Notify invoice always outputs",
+    "description": "Updated nodes: Notify invoice"
   }
 }

@@ -1,5 +1,5 @@
 {
-  "updatedAt": "2026-11-05T00:27:04.233Z",
+  "updatedAt": "2026-11-05T03:07:59.281Z",
   "createdAt": "2026-11-05T00:22:44.608Z",
   "id": "7Cv4l5DnzrPe1Oij",
   "name": "Demo Traders - Manager Agent",
@@ -180,7 +180,7 @@
       "parameters": {
         "mode": "runOnceForAllItems",
         "language": "javaScript",
-        "jsCode": "const DEFAULT_TO = 'owner@example.com';\nconst LATE_MINUTES = 120;\nfunction rows(name) { return $(name).all().map(function (i) { return i.json; }); }\nconst orders = rows('Read orders').filter(function (o) { return o.Order_ID; });\nconst products = rows('Read products').filter(function (p) { return p.SKU; });\nconst invoices = rows('Read invoices').filter(function (i) { return i.Invoice_No; });\nconst dispatch = rows('Read dispatch').filter(function (d) { return d.Dispatch_ID; });\nconst today = $now.toFormat('yyyy-MM-dd');\nconst todays = orders.filter(function (o) { return String(o.Date).slice(0, 10) === today; });\nconst salesToday = todays.reduce(function (s, o) { return s + (Number(o.Total) || 0); }, 0);\nconst lowStock = products.filter(function (p) { return Number(p.Stock) < Number(p.Reorder_Level); }).map(function (p) { return { sku: p.SKU, name: p.Name, stock: Number(p.Stock), reorder_level: Number(p.Reorder_Level) }; });\nconst unpaid = invoices.filter(function (i) { return String(i.Status) !== 'Paid'; }).map(function (i) { return { invoice_no: i.Invoice_No, order_id: i.Order_ID, amount: Number(i.Amount) || 0, due_date: String(i.Due_Date).slice(0, 10), overdue: String(i.Due_Date).slice(0, 10) < today, status: i.Status }; });\nconst unpaidTotal = unpaid.reduce(function (s, i) { return s + i.amount; }, 0);\nconst late = dispatch.filter(function (d) { return String(d.Status) === 'Dispatched'; }).map(function (d) {\n  const t = DateTime.fromFormat(String(d.Dispatched_At), 'yyyy-MM-dd HH:mm:ss', { zone: $now.zoneName });\n  const mins = t.isValid ? Math.round($now.diff(t, 'minutes').minutes) : 0;\n  return { order_id: d.Order_ID, rider: d.Rider, minutes_out: mins };\n}).filter(function (d) { return d.minutes_out > LATE_MINUTES; });\nconst waiting = orders.filter(function (o) { return String(o.Status) === 'Waiting for rider'; }).map(function (o) { return o.Order_ID; });\nlet recipient = DEFAULT_TO;\ntry { recipient = $('Recipient (form)').first().json.recipient || DEFAULT_TO; } catch (e) { recipient = DEFAULT_TO; }\nconst report = { date: today, orders_today: todays.length, sales_today: salesToday, low_stock: lowStock, unpaid_invoices: unpaid, unpaid_total: unpaidTotal, late_deliveries: late, late_after_minutes: LATE_MINUTES, orders_waiting_for_rider: waiting, currency: 'RD$' };\nreturn [{ json: { recipient: recipient, subject: 'Demo Traders - Daily report ' + today, report: report } }];"
+        "jsCode": "const DEFAULT_TO = 'owner@example.com';\nconst LATE_MINUTES = 120;\nfunction rows(name) { return $(name).all().map(function (i) { return i.json; }); }\nfunction sum(list, f) { return list.reduce(function (s, x) { return s + (Number(f(x)) || 0); }, 0); }\nfunction r2(n) { return Math.round(n * 100) / 100; }\nconst orders = rows('Read orders').filter(function (o) { return o.Order_ID; });\nconst products = rows('Read products').filter(function (p) { return p.SKU; });\nconst invoices = rows('Read invoices').filter(function (i) { return i.Invoice_No; });\nconst dispatch = rows('Read dispatch').filter(function (d) { return d.Dispatch_ID; });\nconst payments = rows('Read payments for report').filter(function (p) { return p.Payment_ID; });\nconst moves = rows('Read movements for report').filter(function (m) { return m.Movement_ID; });\nconst today = $now.toFormat('yyyy-MM-dd');\nconst active = orders.filter(function (o) { return String(o.Status) !== 'Cancelled'; });\nconst todays = active.filter(function (o) { return String(o.Date).slice(0, 10) === today; });\nconst cancelledToday = orders.filter(function (o) { return String(o.Status) === 'Cancelled' && String(o.Date).slice(0, 10) === today; }).length;\nconst salesToday = sum(todays, function (o) { return o.Total; });\nconst collectionsToday = sum(payments.filter(function (p) { return String(p.Date).slice(0, 10) === today; }), function (p) { return p.Amount; });\nconst todayMoves = moves.filter(function (m) { return String(m.Time).slice(0, 10) === today; });\nfunction movValue(types) { return r2(sum(todayMoves.filter(function (m) { return types.indexOf(String(m.Type)) >= 0; }), function (m) { return m.Value; })); }\nconst cogs = r2(-movValue(['SALE', 'CANCEL_RETURN', 'CUSTOMER_RETURN']));\nconst purchasesToday = movValue(['PURCHASE_RECEIPT']);\nconst adjustmentsToday = movValue(['ADJUST_UP', 'ADJUST_DOWN', 'SHRINKAGE']);\nconst marginToday = r2(salesToday - cogs);\nconst inventoryValue = r2(sum(products, function (p) { return Number(p.Stock) * Number(p.Cost); }));\nconst lowStock = products.filter(function (p) { return Number(p.Stock) < Number(p.Reorder_Level); }).map(function (p) { return { sku: p.SKU, name: p.Name, stock: Number(p.Stock), reorder_level: Number(p.Reorder_Level) }; });\nconst paidBy = {};\npayments.forEach(function (p) { paidBy[String(p.Invoice_No)] = (paidBy[String(p.Invoice_No)] || 0) + (Number(p.Amount) || 0); });\nconst unpaid = invoices.filter(function (i) { return ['Unpaid', 'Partial'].indexOf(String(i.Status)) >= 0; }).map(function (i) {\n  const balance = Math.max((Number(i.Amount) || 0) - (paidBy[String(i.Invoice_No)] || 0), 0);\n  return { invoice_no: i.Invoice_No, order_id: i.Order_ID, amount: Number(i.Amount) || 0, balance: balance, due_date: String(i.Due_Date).slice(0, 10), overdue: String(i.Due_Date).slice(0, 10) < today, status: i.Status };\n});\nconst receivable = r2(sum(unpaid, function (i) { return i.balance; }));\nconst refunds = invoices.filter(function (i) { return String(i.Status) === 'Refund pending'; }).map(function (i) { return { invoice_no: i.Invoice_No, order_id: i.Order_ID, amount: paidBy[String(i.Invoice_No)] || 0 }; });\nconst stuck = orders.filter(function (o) { return ['New', 'Invoiced'].indexOf(String(o.Status)) >= 0; }).map(function (o) { return o.Order_ID; });\nconst late = dispatch.filter(function (d) { return String(d.Status) === 'Dispatched'; }).map(function (d) {\n  const t = DateTime.fromFormat(String(d.Dispatched_At), 'yyyy-MM-dd HH:mm:ss', { zone: $now.zoneName });\n  const mins = t.isValid ? Math.round($now.diff(t, 'minutes').minutes) : 0;\n  return { order_id: d.Order_ID, rider: d.Rider, minutes_out: mins };\n}).filter(function (d) { return d.minutes_out > LATE_MINUTES; });\nconst waiting = orders.filter(function (o) { return String(o.Status) === 'Waiting for rider'; }).map(function (o) { return o.Order_ID; });\nlet recipient = DEFAULT_TO;\ntry { recipient = $('Recipient (form)').first().json.recipient || DEFAULT_TO; } catch (e) { recipient = DEFAULT_TO; }\nconst report = { date: today, orders_today: todays.length, cancelled_today: cancelledToday, sales_today: salesToday, collections_today: collectionsToday, cost_of_goods_sold_today: cogs, gross_margin_today: marginToday, purchases_today: purchasesToday, inventory_adjustments_today: adjustmentsToday, inventory_value: inventoryValue, low_stock: lowStock, unpaid_invoices: unpaid, accounts_receivable: receivable, refunds_pending: refunds, orders_stuck_without_dispatch: stuck, late_deliveries: late, late_after_minutes: LATE_MINUTES, orders_waiting_for_rider: waiting, currency: 'RD$' };\nreturn [{ json: { recipient: recipient, subject: 'Demo Traders - Daily report ' + today, report: report } }];"
       },
       "notes": "Why Code: ALL numbers in the owner report are computed here (sales today, low stock, unpaid invoices, late deliveries). The AI only turns these numbers into words."
     },
@@ -197,7 +197,7 @@
         "promptType": "define",
         "text": "=Write the owner report email from this JSON:\n{{ JSON.stringify($json.report) }}",
         "options": {
-          "systemMessage": "You write the daily report email for the owner of Demo Traders, a grocery shop. Use ONLY the numbers and names in the JSON you receive. Never calculate, estimate or invent any number. Currency is RD$.\n\nWrite in Spanish, plain text (no markdown symbols), short and clear, with these sections: Ventas de hoy (orders and sales), Stock bajo (each product with its stock and minimum, or say there is none), Facturas sin pagar (count, total, and which ones are overdue), Entregas tardías y pedidos en espera (or say there are none). Start with \"Hola,\" and end with \"Demo Traders\". Do not write a subject line.",
+          "systemMessage": "You write the daily report email for the owner of Demo Traders, a grocery shop. Use ONLY the numbers and names in the JSON you receive. Never calculate, estimate or invent any number. Currency is RD$.\n\nWrite in Spanish, plain text (no markdown symbols), short and clear, with these sections:\n1. Ventas de hoy: pedidos, ventas y pedidos cancelados.\n2. Resumen contable: cobros del día, costo de ventas, margen bruto, compras recibidas y ajustes de inventario (añade una frase de que los ajustes negativos son mermas o faltantes).\n3. Inventario: valor total del inventario y los productos con stock bajo (stock y mínimo), o di que no hay.\n4. Cuentas por cobrar: total por cobrar, lista de facturas con saldo y cuáles están vencidas.\n5. Devoluciones de dinero pendientes (si hay).\n6. Pedidos sin despachar, entregas tardías y pedidos esperando repartidor (o di que no hay).\nStart with \"Hola,\" and end with \"Demo Traders\". Do not write a subject line. If a list is empty, say so in one short line.",
           "maxIterations": 3
         }
       }
@@ -416,6 +416,76 @@
         },
         "options": {}
       }
+    },
+    {
+      "id": "a7b3ded8-0855-498d-99d6-9369d724b4f6",
+      "name": "Read payments for report",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        1900,
+        400
+      ],
+      "parameters": {
+        "resource": "sheet",
+        "operation": "read",
+        "documentId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "1uFc0RmztEiY9tcsNGLe0bExBuhJ5Zxjp6j-J7WfYYjc"
+        },
+        "sheetName": {
+          "__rl": true,
+          "mode": "name",
+          "value": "Payments"
+        }
+      },
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "uVqG7fQd8cxSfaMU",
+          "name": "order to delivery system"
+        }
+      },
+      "alwaysOutputData": true,
+      "executeOnce": true,
+      "retryOnFail": true,
+      "maxTries": 5,
+      "waitBetweenTries": 5000
+    },
+    {
+      "id": "33a59857-dda7-4131-a4a9-58669445ee8d",
+      "name": "Read movements for report",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        2100,
+        400
+      ],
+      "parameters": {
+        "resource": "sheet",
+        "operation": "read",
+        "documentId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "1uFc0RmztEiY9tcsNGLe0bExBuhJ5Zxjp6j-J7WfYYjc"
+        },
+        "sheetName": {
+          "__rl": true,
+          "mode": "name",
+          "value": "Inventory_Movements"
+        }
+      },
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "uVqG7fQd8cxSfaMU",
+          "name": "order to delivery system"
+        }
+      },
+      "alwaysOutputData": true,
+      "executeOnce": true,
+      "retryOnFail": true,
+      "maxTries": 5,
+      "waitBetweenTries": 5000
     }
   ],
   "connections": {
@@ -457,17 +527,6 @@
         [
           {
             "node": "Read dispatch",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Read dispatch": {
-      "main": [
-        [
-          {
-            "node": "Compute report numbers",
             "type": "main",
             "index": 0
           }
@@ -539,6 +598,39 @@
           }
         ]
       ]
+    },
+    "Read dispatch": {
+      "main": [
+        [
+          {
+            "node": "Read payments for report",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Read payments for report": {
+      "main": [
+        [
+          {
+            "node": "Read movements for report",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Read movements for report": {
+      "main": [
+        [
+          {
+            "node": "Compute report numbers",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
     }
   },
   "settings": {
@@ -551,11 +643,11 @@
     "builderVariant": "mcp"
   },
   "nodeGroups": [],
-  "versionId": "251da7e9-79bd-40ee-b0b0-48caad12c69f",
-  "activeVersionId": "251da7e9-79bd-40ee-b0b0-48caad12c69f",
+  "versionId": "37d5c20b-76c2-4fb6-921c-2d76aec246ce",
+  "activeVersionId": "37d5c20b-76c2-4fb6-921c-2d76aec246ce",
   "sourceWorkflowId": null,
   "versionMetadata": {
-    "name": "Retry Sheets nodes on rate limit",
-    "description": "Updated nodes: Read orders, Read products, Read invoices, Read dispatch, Log report"
+    "name": "Retry settings on new reads",
+    "description": "Updated nodes: Read payments for report, Read movements for report"
   }
 }
